@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>ReVamp Storefront</title>
+		<link rel="icon" type="image/png" href="img/revamplogo.png">
+		<link rel="stylesheet" href="revamp-style.css">
+	</head>
+	<body>
+		<!-- Top Navigation -->
+		<nav class="top-nav">
+			<div class="nav-container">
+				<img src="img/revamp.png" alt="ReVamp Logo" class="nav-logo">
+				<ul class="nav-menu">
+					<li><a href="#" class="nav-link">Home</a></li>
+					<li><a href="#" class="nav-link">Collections</a></li>
+					<li><a href="#" class="nav-link active">Products</a></li>
+				</ul>
+				<div class="nav-actions">
+					<button id="cart-btn" class="cart-btn">View Cart (<span id="cart-count">0</span>)</button>
+					<a href="admin.html" class="dev-view-btn-small">Dev View</a>
+				</div>
+			</div>
+		</nav>
+
+		<!-- Main Content -->
+		<main class="marketplace-main">
+			<!-- Page Header -->
+			<div class="page-title-section">
+				<h1 class="marketplace-title">[YOUR BUSINESS]'S MARKETPLACE</h1>
+				<div class="breadcrumb">
+					<span>Home</span> / <span class="current">Products</span>
+				</div>
+				<h2 class="products-title">PRODUCTS</h2>
+			</div>
+
+			<!-- Product Grid View -->
+			<div id="grid-view" class="marketplace-content">
+				<!-- Main Products Area (no sidebar) -->
+				<div class="products-main">
+					<div class="products-header">
+						<div class="search-container">
+							<input id="public-search" placeholder="Search" class="search-input" />
+						</div>
+					</div>
+					<div id="product-grid" class="products-grid">
+						<!-- Products will be loaded here by JavaScript -->
+					</div>
+				</div>
+			</div>
+
+			<!-- Product Detail View -->
+			<div id="product-view" class="product-detail-container" style="display: none;">
+				<div class="product-detail">
+					<button id="back-btn" class="back-button">← Back to Products</button>
+					<div class="product-detail-content">
+						<div class="product-image-section">
+							<div class="product-image-gallery">
+								<img id="product-detail-image" src="" alt="" class="product-detail-img">
+								<div class="image-thumbnails">
+									<!-- Additional thumbnails can go here -->
+								</div>
+							</div>
+						</div>
+						<div class="product-info-section">
+							<h1 id="product-detail-title">PRODUCT TITLE</h1>
+							<div class="product-price-status">
+								<div id="product-detail-price" class="product-detail-price">$ XX</div>
+								<div class="product-status">Status</div>
+							</div>
+							<div class="product-options">
+								<select class="product-select">
+									<option>Select Options</option>
+								</select>
+								<button id="add-to-cart-btn" class="add-to-cart-btn">Add to Cart</button>
+							</div>
+							<div class="product-description-section">
+								<h3>Product Description</h3>
+								<div id="product-detail-description" class="product-description"></div>
+							</div>
+						</div>
+					</div>
+					
+					<!-- Other Products Section -->
+					<div class="other-products-section">
+						<h2>OTHER PRODUCTS</h2>
+						<div id="other-products-grid" class="other-products-grid">
+							<!-- Related products will be loaded here -->
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Cart Popup Modal -->
+			<div id="cart-modal" class="cart-modal" style="display: none;">
+				<div class="cart-modal-overlay" onclick="closeCart()"></div>
+				<div class="cart-modal-content">
+					<div class="cart-modal-header">
+						<h2>Your Cart</h2>
+						<button class="close-cart-btn" onclick="closeCart()">×</button>
+					</div>
+					<div class="cart-modal-body">
+						<div id="cart-items" class="cart-items">
+							<!-- Cart items will be loaded here -->
+						</div>
+						<div class="cart-summary">
+							<div class="cart-total">
+								<div class="total-line">
+									<span>Subtotal:</span>
+									<span id="cart-subtotal">$0.00</span>
+								</div>
+								<div class="total-line total-final">
+									<span>Total:</span>
+									<span id="cart-total">$0.00</span>
+								</div>
+							</div>
+							<button class="checkout-btn" onclick="alert('Checkout functionality coming soon!')">Proceed to Checkout</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</main>
+		<script src="revamp-script.js"></script>
+		<script>
+			// Initialize public page
+			document.addEventListener('DOMContentLoaded', function() {
+				initializePage();
+			});
+		</script>
+	</body>
+</html>

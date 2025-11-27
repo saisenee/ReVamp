@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ReVamp Admin</title>
+    <link rel="icon" type="image/png" href="img/revamplogo.png">
+    <link rel="stylesheet" href="revamp-style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <aside class="sidebar">
+            <img src="img/revamp.png" alt="ReVamp Logo" class="logo">
+            <ul class="sidebar-menu">
+                <li class="active">Dashboard</li>
+                <li>Orders</li>
+                <li class="active-item">Products</li>
+                <li>Discounts</li>
+                <li>Shop Settings</li>
+            </ul>
+        </aside>
+
+        <main class="main-area">
+
+            <header class="page-header dashboard-only">
+                <h1>PRODUCTS</h1>
+                <div class="search-row">
+                    <input id="search" placeholder="Search" />
+                </div>
+                <div class="view-store">
+                    <a href="public.html" class="view-store-btn" rel="noopener">View storefront</a>
+                </div>
+            </header>
+
+            <div class="controls dashboard-only">
+                <div class="tabs">
+                    <button class="tab active">Products</button>
+                    <button class="tab">Collections</button>
+                </div>
+                <div class="actions">
+                    <button id="quickEditBtn" class="pill">Quick edit</button>
+                    <button id="arrangeBtn" class="pill">Arrange shop</button>
+                </div>
+            </div>
+
+                        <section class="products-grid" id="productsGrid">
+                                <!-- Add product card and product cards will be injected here -->
+                        </section>
+
+                        <!-- Edit Product SPA Section (hidden by default) -->
+                        <div id="editProductSection" class="spa-edit-section" style="display:none;">
+                            <header class="page-header edit-header">
+                                <div style="display:flex;align-items:center;gap:16px">
+                                    <button type="button" id="backToDashboard" class="back-link">←</button>
+                                    <h2>EDIT PRODUCT</h2>
+                                </div>
+                                <div class="edit-actions">
+                                    <button class="btn btn-ghost">Delete</button>
+                                    <button class="btn btn-primary">SAVE ITEM</button>
+                                </div>
+                            </header>
+                            <section class="edit-content">
+                                <form id="editForm" class="edit-form" enctype="multipart/form-data">
+                                    <div class="grid-columns">
+                                        <div class="left-column">
+                                            <div class="top-block">
+                                                <label>Product Name
+                                                    <input id="title" name="title" type="text" placeholder="Title">
+                                                </label>
+                                                <label>Product Description
+                                                    <textarea id="description" name="description" placeholder="Insert text ..."></textarea>
+                                                </label>
+                                            </div>
+                                            <div class="variation-section">
+                                                <div class="variation-header-row">
+                                                    <div class="variation-title">Variation(s)</div>
+                                                </div>
+
+                                                <div id="variationsContainer"></div>
+
+                                                <div class="variation-add-row">
+                                                    <input id="newVariationName" class="variation-input" type="text" placeholder="Variation type">
+                                                    <button type="button" id="addVariationTypeBtn" class="btn-add-variation">Add</button>
+                                                </div>
+                                            </div>
+                                            <br>
+                                            <label>Price
+                                                <div class="input-inline">
+                                                    <input id="price" name="price" type="text" placeholder="$0.00" aria-label="price amount">
+                                                    <select id="currency" name="currency" class="currency-select" aria-label="currency">
+                                                        <option value="CAD">CAD $</option>
+                                                        <option value="USD">USD $</option>
+                                                        <option value="EUR">EUR €</option>
+                                                        <option value="GBP">GBP £</option>
+                                                    </select>
+                                                </div>
+                                            </label>
+                                            <label>Shipping
+                                                <div class="input-inline">
+                                                    <input id="shipping" name="shipping" type="text" placeholder="$0.00" aria-label="shipping amount">
+                                                    <select id="shippingType" name="shippingType" class="shipping-select" aria-label="shipping type">
+                                                        <option value="domestic">Domestic</option>
+                                                        <option value="international">International</option>
+                                                        <option value="custom">Custom</option>
+                                                    </select>
+                                                </div>
+                                            </label>
+                                        </div>
+                                        <aside class="right-column">
+                                            <label>Upload Image(s)</label>
+                                            <div class="upload-large">
+                                                <!-- keep native file input but hide it; preserve name for form submission -->
+                                                <input id="images" name="images" type="file" accept="image/*" multiple style="display:none;" />
+                                                <div class="upload-dropzone" role="button" tabindex="0">
+                                                    <div class="upload-icon-circle">⤴︎</div>
+                                                    <div class="upload-title">Click to choose an image or drag here</div>
+                                                    <div class="upload-sub">Accepted file types: gif, png, jpg, webp</div>
+                                                    <div class="upload-sub">Size limit: 10 MB</div>
+                                                </div>
+                                            </div>
+                                            <label>Status
+                                                <select id="status" name="status">
+                                                    <option value="active">Active</option>
+                                                    <option value="hidden">Hidden</option>
+                                                    <option value="soldout">Sold Out</option>
+                                                    <option value="preorder">Preorder Now</option>
+                                                </select>
+                                            </label>
+                                        </aside>
+                                    </div>
+                                </form>
+                            </section>
+                        </div>
+        </main>
+    </div>
+
+    <template id="product-template">
+        <div class="product-card">
+            <div class="thumb">
+                <div class="placeholder">Image</div>
+                <input class="select" type="checkbox" />
+            </div>
+            <div class="meta">
+                <div class="title">Product Title</div>
+                <div class="price">$0.00</div>
+            </div>
+        </div>
+    </template>
+
+    <template id="variation-group-template">
+        <div class="variation-group">
+            <div class="variation-header">
+                <input class="variation-name" type="text" value="Variation" />
+                <button type="button" class="remove-variation">Remove</button>
+            </div>
+            <div class="input-inline">
+                <input class="variation-tag-input" type="text" placeholder="Add tag" />
+                <button class="add-variation-tag selector" type="button">Add</button>
+            </div>
+            <div class="chip-list variation-tags"></div>
+        </div>
+    </template>
+
+    <script src="revamp-script.js"></script>
+</body>
+</html>
