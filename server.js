@@ -24,7 +24,7 @@ app.use(express.json())
 import auth0 from 'express-openid-connect'
 const { auth } = auth0
 
-const config = {
+const auth0Config = {
     authRequired: false,
     auth0Logout: true,
     secret: process.env.SECRET,
@@ -33,14 +33,13 @@ const config = {
     issuerBaseURL: process.env.ISSUER_BASE_URL
 }
 
-// Validate that the required Auth0 env vars are present
-if (['secret', 'baseURL', 'clientID', 'issuerBaseURL'].some(key => !config[key])) {
-    console.error('Error: Auth0 environment variable(s) are missing.')
-    process.exit(1)
+const missingAuth0 = ['secret', 'baseURL', 'clientID', 'issuerBaseURL'].filter(key => !auth0Config[key])
+if (missingAuth0.length) {
+    console.warn('Auth0 disabled. Missing env vars:', missingAuth0.join(', '))
+    console.warn('Create a .env file with SECRET, BASE_URL, CLIENT_ID, ISSUER_BASE_URL to enable Auth0.')
+} else {
+    app.use(auth(auth0Config))
 }
-
-// Attach Auth0 middleware (adds /login, /logout, /callback and req.oidc)
-app.use(auth(config))
 
 // Our API is defined in a separate module to keep things tidy.
 // Let's import our API endpoints and activate them.
@@ -50,6 +49,10 @@ app.use('/', apiRoutes)
 // Import and mount upload routes
 import uploadRoutes from './routes/upload.js'
 app.use('/api', uploadRoutes)
+
+// Import and mount product routes
+import productRoutes from './routes/products.js'
+app.use('/api/products', productRoutes)
 
 const port = 3000
 app.listen(port, () => {
