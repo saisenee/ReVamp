@@ -7,36 +7,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model cats {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
-  adoptionDate   DateTime? @db.Date
-  birthDate      DateTime? @db.Date
-  breed          String?
-  declawed       Boolean?
-  description    String?
-  fosterDate     DateTime? @db.Date
-  fosterDuration Int?
-  location       String?
-  name           String?
-  neutered       Boolean?
-  sex            String?
-  primaryColor   String?
-  secondaryColor String?
-  playfulness    Int?
-  appetite       Int?
-  microchip      Int?
-  isAdopted      Boolean?
-  food           String?
-  imageUrl       String?
-  ownerId        String?   @db.ObjectId
-  owner          User?     @relation(fields: [ownerId], references: [id])
+model Product {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  price       Float
+  currency    String?  @default("USD")
+  shipping    Float?
+  shippingType String? @default("domestic")
+  images      String[]
+  status      String?  @default("active")
+  categories  String[]
+  variations  Json?    // Store variation groups as JSON
+  ownerId     String?  @db.ObjectId
+  owner       User?    @relation(fields: [ownerId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model User {
-  id      String  @id @default(auto()) @map("_id") @db.ObjectId
-  sub     String  @unique
-  email   String?
-  name    String?
-  picture String?
-  cats    cats[]
+  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  sub      String    @unique
+  email    String?
+  name     String?
+  picture  String?
+  products Product[]
 }

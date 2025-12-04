@@ -1,5 +1,5 @@
 {
-  "name": "sikkemha",
+  "name": "revamp",
   "version": "1.0.0",
   "description": "API Endpoints for Publishing and Searching",
   "main": "server.js",
