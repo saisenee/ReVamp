@@ -3,8 +3,8 @@
 import express from 'express'
 const router = express.Router()
 
-// Set this to match the model name in your Prisma schema
-const model = 'Product'
+// Set this to match the model name in your Prisma schema (lowercase first letter)
+const model = 'product'
 
 // Prisma lets NodeJS communicate with MongoDB
 // Let's import and initialize the Prisma client
@@ -40,8 +40,9 @@ async function ensureUser(oidcUser) {
 }
 
 
-// Import del function from Vercel Blob for image cleanup
-import { del } from '@vercel/blob'
+// Import del and put functions from Vercel Blob for image management
+import { del, put } from '@vercel/blob'
+import busboy from 'busboy'
 
 // Connect to the database
 prisma.$connect().then(() => {
@@ -78,28 +79,107 @@ router.get('/api/user', async (req, res) => {
 // Create a new record for the configured model
 // This is the 'C' of CRUD
 router.post('/data', async (req, res) => {
-    if (!req.oidc?.isAuthenticated()) {
-        return res.status(401).send({ error: 'Authentication required' })
-    }
-
     try {
-        // Ensure we have a User record for this Auth0 user
-        const user = await ensureUser(req.oidc.user)
-
-        // Remove the id field from request body if it exists
-        // MongoDB will auto-generate an ID for new records
-        const { id, ownerId, owner, ...createData } = req.body
-
-        const created = await prisma[model].create({
-            data: {
-                ...createData,
-                ownerId: user.id
+        // Check if this is multipart/form-data (with files)
+        const contentType = req.headers['content-type'] || '';
+        
+        if (contentType.includes('multipart/form-data')) {
+            // Handle FormData with file uploads
+            const bb = busboy({ headers: req.headers });
+            const fields = {};
+            const imageBuffers = [];
+            
+            bb.on('file', (fieldname, file, info) => {
+                const chunks = [];
+                file.on('data', (chunk) => chunks.push(chunk));
+                file.on('end', () => {
+                    imageBuffers.push({
+                        buffer: Buffer.concat(chunks),
+                        filename: info.filename,
+                        mimeType: info.mimeType
+                    });
+                });
+            });
+            
+            bb.on('field', (name, value) => {
+                if (name.endsWith('[]')) {
+                    const key = name.slice(0, -2);
+                    if (!fields[key]) fields[key] = [];
+                    fields[key].push(value);
+                } else {
+                    fields[name] = value;
+                }
+            });
+            
+            bb.on('finish', async () => {
+                try {
+                    // Upload images to Vercel Blob if BLOB_READ_WRITE_TOKEN is configured
+                    const imageUrls = [];
+                    if (process.env.BLOB_READ_WRITE_TOKEN && imageBuffers.length > 0) {
+                        for (const img of imageBuffers) {
+                            const blob = await put(img.filename, img.buffer, {
+                                access: 'public',
+                                contentType: img.mimeType
+                            });
+                            imageUrls.push(blob.url);
+                        }
+                    }
+                    
+                    // Parse variations if it's a string
+                    let variations = fields.variations;
+                    if (typeof variations === 'string') {
+                        try {
+                            variations = JSON.parse(variations);
+                        } catch (e) {
+                            variations = null;
+                        }
+                    }
+                    
+                    // Build the data object
+                    const createData = {
+                        title: fields.title,
+                        description: fields.description || '',
+                        price: parseFloat(fields.price) || 0,
+                        currency: fields.currency || 'USD',
+                        shipping: fields.shipping ? parseFloat(fields.shipping) : null,
+                        shippingType: fields.shippingType || 'domestic',
+                        status: fields.status || 'active',
+                        images: imageUrls,
+                        categories: fields.categories || [],
+                        variations: variations
+                    };
+                    
+                    // If authenticated, link to user
+                    if (req.oidc?.isAuthenticated()) {
+                        const user = await ensureUser(req.oidc.user);
+                        createData.ownerId = user.id;
+                    }
+                    
+                    const created = await prisma[model].create({ data: createData });
+                    res.status(201).send(created);
+                } catch (err) {
+                    console.error('POST /data (FormData) error:', err);
+                    res.status(500).send({ error: 'Failed to create record', details: err.message || err });
+                }
+            });
+            
+            req.pipe(bb);
+        } else {
+            // Handle regular JSON request
+            const { id, ownerId, owner, ...createData } = req.body;
+            
+            // If authenticated, link to user
+            if (req.oidc?.isAuthenticated()) {
+                const user = await ensureUser(req.oidc.user);
+                createData.ownerId = user.id;
             }
-        })
-        res.status(201).send(created)
+            
+            const created = await prisma[model].create({ data: createData });
+            res.status(201).send(created);
+        }
     } catch (err) {
-        console.error('POST /data error:', err)
-        res.status(500).send({ error: 'Failed to create record', details: err.message || err })
+        console.error('POST /data error:', err);
+        res.status(500).send({ error: 'Failed to create record', details: err.message || err });
     }
 })
 

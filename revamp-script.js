@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function render() {
-        products = await getProducts();
+        products = await fetchProducts();
         productsGrid.innerHTML = '';
 
         // Add product card
@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadProducts(){
         try{
-            products = await getProducts();
+            products = await fetchProducts();
         }catch(e){
             console.error('Failed to load products:', e);
             products = [];
@@ -230,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('variations', JSON.stringify(variationGroups));
 
             try {
-                const res = await fetch(`${API_BASE}/api/products`, { 
+                const res = await fetch(`${API_BASE}/data`, { 
                     method: 'POST', 
                     body: formData 
                 });
@@ -363,9 +363,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // API functions
-async function getProducts() {
+async function fetchProducts() {
     try {
-        const response = await fetch(`${API_BASE}/api/products`);
+        const response = await fetch(`${API_BASE}/data`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -379,7 +379,7 @@ async function getProducts() {
 
 async function createProduct(productData) {
     try {
-        const response = await fetch(`${API_BASE}/api/products`, {
+        const response = await fetch(`${API_BASE}/data`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -412,7 +412,7 @@ function initializePage() {
 
 async function showProductDetail(productId) {
     try {
-        const products = await getProducts();
+        let products = await fetchProducts();
         
         if (!Array.isArray(products)) {
             console.error('Products is not an array:', products);
@@ -523,7 +523,7 @@ async function renderPublicGrid(filterCategory = 'all', searchQuery = '') {
     if (!grid) return;
     
     try {
-        let products = await getProducts();
+        let products = await fetchProducts();
         
         if (!Array.isArray(products)) {
             console.error('Products is not an array:', products);
@@ -601,7 +601,7 @@ function updateCartCount() {
 }
 
 async function addToCart(productId, selectedOptions = []) {
-    const products = await getProducts();
+    const products = await fetchProducts();
     const product = products.find(p => p.id === productId);
     
     if (!product) {
