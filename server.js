@@ -1,18 +1,18 @@
 // Express is a framework for building APIs and web apps
 // See also: https://expressjs.com/
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { auth } from 'express-openid-connect';
 import apiRouter from './routes/api.js';
+import uploadRouter from './routes/upload.js';
+import productsRouter from './routes/products.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Initialize Express app
 const app = express();
-const prisma = new PrismaClient();
 const port = process.env.PORT || 3000;
 
 // Middleware
@@ -39,23 +39,14 @@ if (process.env.SECRET && process.env.CLIENT_ID && process.env.ISSUER_BASE_URL) 
   console.log('Auth0 not configured - authentication disabled');
 }
 
-// Explicit route for root - redirect to public storefront
+// Import and use API routes
+app.use('/api', apiRouter);
+app.use('/api', uploadRouter);
+app.use('/api/products', productsRouter);
+
+// Explicit route for root - serve index.html
 app.get('/', (req, res) => {
-    res.redirect('/public.html');
-});
-
-// Mount API routes from routes/api.js
-app.use(apiRouter);
-
-// Basic upload endpoint (placeholder - you can integrate with Vercel Blob later)
-app.post('/api/upload', (req, res) => {
-  // For now, return a placeholder response
-  // You can integrate with Vercel Blob or other storage later
-  res.json({ 
-    success: true, 
-    message: 'Upload endpoint ready - integrate with your preferred storage solution',
-    urls: []
-  });
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Error handling middleware
