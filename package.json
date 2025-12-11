@@ -5,8 +5,10 @@
   "main": "server.js",
   "scripts": {
     "setup": "npm install",
-    "start": "node --watch --env-file=.env server.js",
-    "postinstall": "prisma generate"
+    "start": "node --env-file=.env server.js",
+    "dev": "node --watch --env-file=.env server.js",
+    "postinstall": "prisma generate",
+    "vercel-build": "prisma generate && prisma db push --skip-generate"
   },
   "keywords": [],
   "author": "",

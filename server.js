@@ -19,6 +19,10 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files from 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/img', express.static(path.join(__dirname, 'img')));
+
 // Auth0 middleware (only if configured)
 if (process.env.SECRET && process.env.CLIENT_ID && process.env.ISSUER_BASE_URL) {
   const config = {
@@ -42,10 +46,6 @@ app.get('/', (req, res) => {
 
 // Mount API routes from routes/api.js
 app.use(apiRouter);
-
-// Serve static files from root directory and public folder
-app.use(express.static('.'));
-app.use(express.static('public'));
 
 // Basic upload endpoint (placeholder - you can integrate with Vercel Blob later)
 app.post('/api/upload', (req, res) => {
