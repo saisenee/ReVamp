@@ -1,27 +1,34 @@
 // Express is a framework for building APIs and web apps
 // See also: https://expressjs.com/
 import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
+
+// Initialize Express app
+const app = express();
+
+
 import { auth } from 'express-openid-connect';
 import apiRouter from './routes/api.js';
 import uploadRouter from './routes/upload.js';
 import productsRouter from './routes/products.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// import path module to help with file paths
+import path from 'path';
 
-// Initialize Express app
-const app = express();
+// Serve static files from the 'public' folder
+app.use(express.static('public'))
+
+// On Vercel, point the root url (/) to index.html explicitly
+if (process.env.VERCEL) {
+    app.get('/', (req, res) => {
+        res.sendFile(path.join(process.cwd(), 'public', 'index.html'))
+    })
+}
 const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from 'public' directory
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/img', express.static(path.join(__dirname, 'img')));
 
 // Auth0 middleware (only if configured)
 if (process.env.SECRET && process.env.CLIENT_ID && process.env.ISSUER_BASE_URL) {
@@ -43,11 +50,7 @@ if (process.env.SECRET && process.env.CLIENT_ID && process.env.ISSUER_BASE_URL) 
 app.use('/api', apiRouter);
 app.use('/api', uploadRouter);
 app.use('/api/products', productsRouter);
-
-// Explicit route for root - serve index.html
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+ 
 
 // Error handling middleware
 app.use((err, req, res, next) => {

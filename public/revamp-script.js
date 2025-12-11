@@ -1,6 +1,6 @@
 // ReVamp storefront script - connects to API endpoints
 // Determine API base URL
-const API_BASE = window.location.origin;
+const API_BASE = window.location.origin + '/api'
 
 document.addEventListener('DOMContentLoaded', () => {
     try {
