@@ -3,119 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ReVamp - Welcome</title>
+    <title>ReVamp - Rebrand, Revitalize</title>
     <link rel="icon" type="image/png" href="/img/revamplogo.png">
     <link rel="stylesheet" href="/revamp-style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-</head>
-<body class="landing-page">
-    <!-- Header with Auth Status -->
-    <header class="landing-header">
-        <div class="header-container">
-            <a href="/" class="header-logo">
-                <img src="/img/revamp.png" alt="ReVamp Logo" class="logo-img">
-            </a>
-            <nav class="header-nav">
-                <a href="/public.html" class="nav-link">Shop</a>
-            </nav>
-            <div class="header-auth" id="header-auth">
-                <!-- Auth content loaded by JS -->
-            </div>
-        </div>
-    </header>
+    <style>
+        /* Landing Page Specific Styles */
+        .landing-page {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-family: 'Alexandria', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
 
-    <!-- Hero Section with Background Placeholder -->
-    <main class="landing-main">
-        <section class="hero-section" id="hero-section">
-            <!-- Background image placeholder - easily swappable -->
-            <div class="hero-background" style="background-image: url('/img/hero-bg.jpg');">
-                <div class="hero-overlay"></div>
-            </div>
-            <div class="hero-content">
-                <h1 class="hero-title" id="business-title">Welcome to ReVamp</h1>
-                <p class="hero-subtitle">Discover unique products, reimagined for you</p>
-                <div class="hero-actions">
-                    <a href="/public.html" class="btn btn-primary-landing">Browse Products</a>
-                </div>
-            </div>
-        </section>
+        .landing-container {
+            position: relative;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+        }
 
-        <!-- Features Section -->
-        <section class="features-section">
-            <div class="features-container">
-                <div class="feature-card">
-                    <div class="feature-icon">🛍️</div>
-                    <h3>Curated Products</h3>
-                    <p>Hand-picked selection of quality items</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🚚</div>
-                    <h3>Fast Shipping</h3>
-                    <p>Quick and reliable delivery</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">💯</div>
-                    <h3>Quality Guaranteed</h3>
-                    <p>Satisfaction you can count on</p>
-                </div>
-            </div>
-        </section>
-    </main>
+        /* Background */
+        .landing-bg {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+        }
 
-    <!-- Footer -->
-    <footer class="landing-footer">
-        <p>&copy; 2025 ReVamp. All rights reserved.</p>
-    </footer>
+        .landing-bg img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-    <script>
-        // Fetch user auth status and update header
-        async function initLanding() {
-            try {
-                const response = await fetch('/api/user');
-                const user = await response.json();
-                
-                const headerAuth = document.getElementById('header-auth');
-                
-                if (user.isAuthenticated) {
-                    const adminLink = user.isAdmin 
-                        ? '<a href="/admin" class="btn btn-admin">Admin</a>' 
-                        : '';
-                    
-                    headerAuth.innerHTML = `
-                        <div class="auth-user">
-                            <img src="${user.picture || '/img/default-avatar.png'}" 
-                                 alt="${user.name}" 
-                                 class="user-avatar"
-                                 onerror="this.src='/img/default-avatar.svg'">
-                            <span class="user-name">${user.name || 'User'}</span>
-                        </div>
-                        ${adminLink}
-                        <a href="/logout" class="btn btn-outline">Logout</a>
-                    `;
-                } else {
-                    headerAuth.innerHTML = `
-                        <div class="auth-user">
-                            <img src="/img/default-avatar.svg" alt="Guest" class="user-avatar">
-                            <span class="user-name">Guest</span>
-                        </div>
-                        <a href="/login" class="btn btn-primary-sm">Login</a>
-                    `;
-                }
-                
-                // Load business title
-                const businessRes = await fetch('/api/business');
-                const business = await businessRes.json();
-                if (business.title) {
-                    document.getElementById('business-title').textContent = `Welcome to ${business.title}`;
-                }
-            } catch (err) {
-                console.error('Failed to load user/business data:', err);
+        .landing-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+        }
+
+        /* Content */
+        .landing-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 60px 80px;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* Left side - Branding */
+        .landing-branding {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .landing-tagline {
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: 400;
+            font-style: italic;
+            letter-spacing: 2px;
+            margin: 0;
+        }
+
+        .landing-logo {
+            max-width: 400px;
+            height: auto;
+        }
+
+        /* Right side - Actions */
+        .landing-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: flex-end;
+        }
+
+        .btn-guest {
+            display: inline-block;
+            padding: 16px 36px;
+            background: #22c55e;
+            color: #fff;
+            font-size: 1.25rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+            min-width: 280px;
+            text-align: center;
+        }
+
+        .btn-guest:hover {
+            background: #16a34a;
+            transform: translateY(-2px);
+        }
+
+        .btn-admin-login {
+            display: inline-block;
+            padding: 16px 36px;
+            background: transparent;
+            color: #fff;
+            font-size: 1.25rem;
+            font-weight: 500;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 280px;
+            text-align: center;
+        }
+
+        .btn-admin-login:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #fff;
+        }
+
+        /* Footer credit */
+        .landing-credit {
+            position: absolute;
+            bottom: 30px;
+            left: 80px;
+            z-index: 1;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .landing-content {
+                flex-direction: column;
+                justify-content: center;
+                gap: 60px;
+                padding: 40px 30px;
+                text-align: center;
+            }
+
+            .landing-branding {
+                align-items: center;
+            }
+
+            .landing-logo {
+                max-width: 300px;
+            }
+
+            .landing-actions {
+                align-items: center;
+            }
+
+            .landing-credit {
+                left: 50%;
+                transform: translateX(-50%);
+                text-align: center;
             }
         }
-        
-        document.addEventListener('DOMContentLoaded', initLanding);
-    </script>
-</body>
-</html>
+    </style>
+</head>
+<body class="landing-page">
+    <div class="landing-container">
+        <!-- Background Image -->
+        <div class="landing-bg">
+            <img src="/img/hero-bg.jpg" alt="Store Background" onerror="this.style.display='none'">
+            <div class="landing-overlay"></div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="landing-content">
+            <!-- Left: Branding -->
+            <div class="landin
