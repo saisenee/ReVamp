@@ -12,6 +12,15 @@ const model = 'product'
 import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
+// Import admin middleware
+import { isAdmin, requireAdmin } from '../middleware/auth.js'
+
+// In-memory business settings (can be moved to DB later)
+let businessSettings = {
+    title: "YOUR BUSINESS",
+    description: "Welcome to our store"
+};
+
 
 // User lifecycle helper
 async function ensureUser(oidcUser) {
@@ -57,15 +66,18 @@ router.get('/api/user', async (req, res) => {
     try {
         if (req.oidc?.isAuthenticated()) {
             const user = await ensureUser(req.oidc.user)
+            const userIsAdmin = isAdmin(req.oidc.user)
             res.send({
                 ...req.oidc.user,
                 id: user.id,
-                isAuthenticated: true
+                isAuthenticated: true,
+                isAdmin: userIsAdmin
             })
         } else {
             res.send({
                 name: 'Guest',
-                isAuthenticated: false
+                isAuthenticated: false,
+                isAdmin: false
             })
         }
     } catch (err) {
@@ -313,6 +325,87 @@ router.delete('/data/:id', async (req, res) => {
     } catch (err) {
         console.error('DELETE /data/:id error:', err)
         res.status(500).send({ error: 'Failed to delete record', details: err.message || err })
+    }
+})
+
+// ----- BUSINESS SETTINGS -----
+// GET /api/business - Public endpoint to get business info
+router.get('/api/business', (req, res) => {
+    res.json(businessSettings)
+})
+
+// PUT /api/business - Admin-only endpoint to update business info
+router.put('/api/business', requireAdmin, (req, res) => {
+    try {
+        const { title, description } = req.body
+        if (title !== undefined) businessSettings.title = title
+        if (description !== undefined) businessSettings.description = description
+        res.json(businessSettings)
+    } catch (err) {
+        console.error('PUT /api/business error:', err)
+        res.status(500).json({ error: 'Failed to update business settings' })
+    }
+})
+
+// ----- ADMIN PRODUCT ROUTES -----
+// These routes require admin authorization and allow editing any product
+
+// PUT /api/admin/products/:id - Admin can edit any product
+router.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
+    try {
+        const { id, _id, ownerId, owner, ...updateData } = req.body || {}
+        
+        const existing = await prisma[model].findUnique({
+            where: { id: req.params.id }
+        })
+        
+        if (!existing) {
+            return res.status(404).json({ error: 'Product not found' })
+        }
+        
+        const updated = await prisma[model].update({
+            where: { id: req.params.id },
+            data: updateData
+        })
+        
+        res.json(updated)
+    } catch (err) {
+        console.error('PUT /api/admin/products/:id error:', err)
+        res.status(500).json({ error: 'Failed to update product', details: err.message })
+    }
+})
+
+// DELETE /api/admin/products/:id - Admin can delete any product
+router.delete('/api/admin/products/:id', requireAdmin, async (req, res) => {
+    try {
+        const product = await prisma[model].findUnique({
+            where: { id: req.params.id }
+        })
+        
+        if (!product) {
+            return res.status(404).json({ error: 'Product not found' })
+        }
+        
+        // Delete from database
+        const result = await prisma[model].delete({
+            where: { id: req.params.id }
+        })
+        
+        // Delete associated images from Vercel Blob
+        if (product.images && product.images.length > 0) {
+            for (const imageUrl of product.images) {
+                try {
+                    await del(imageUrl)
+                } catch (blobError) {
+                    console.error('Failed to delete image:', blobError)
+                }
+            }
+        }
+        
+        res.json(result)
+    } catch (err) {
+        console.error('DELETE /api/admin/products/:id error:', err)
+        res.status(500).json({ error: 'Failed to delete product', details: err.message })
     }
 })
 

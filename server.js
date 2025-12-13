@@ -1,34 +1,27 @@
 // Express is a framework for building APIs and web apps
 // See also: https://expressjs.com/
 import express from 'express';
-
-// Initialize Express app
-const app = express();
-
-
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { auth } from 'express-openid-connect';
 import apiRouter from './routes/api.js';
 import uploadRouter from './routes/upload.js';
 import productsRouter from './routes/products.js';
+import { isAdmin, requireAdminPage } from './middleware/auth.js';
 
-// import path module to help with file paths
-import path from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Serve static files from the 'public' folder
-app.use(express.static('public'))
-
-// On Vercel, point the root url (/) to index.html explicitly
-if (process.env.VERCEL) {
-    app.get('/', (req, res) => {
-        res.sendFile(path.join(process.cwd(), 'public', 'index.html'))
-    })
-}
+// Initialize Express app
+const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files from the 'public' folder
+app.use(express.static('public'));
 
 // Auth0 middleware (only if configured)
 if (process.env.SECRET && process.env.CLIENT_ID && process.env.ISSUER_BASE_URL) {
@@ -46,11 +39,32 @@ if (process.env.SECRET && process.env.CLIENT_ID && process.env.ISSUER_BASE_URL) 
   console.log('Auth0 not configured - authentication disabled');
 }
 
+// Explicit route for root - serve landing page
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Admin page - requires admin authorization
+app.get('/admin', requireAdminPage, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// Also protect admin.html direct access
+app.get('/admin.html', requireAdminPage, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// Mount API routes (pass isAdmin helper)
+app.use((req, res, next) => {
+    // Attach isAdmin helper to request for use in routes
+    req.isAdmin = req.oidc?.isAuthenticated() ? isAdmin(req.oidc.user) : false;
+    next();
+});
+
 // Import and use API routes
 app.use('/api', apiRouter);
 app.use('/api', uploadRouter);
 app.use('/api/products', productsRouter);
- 
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -61,12 +75,6 @@ app.use((err, req, res, next) => {
 // Start server
 app.listen(port, () => {
   console.log(`ReVamp server running at http://localhost:${port}`);
-  console.log(`Admin panel: http://localhost:${port}/admin.html`);
+  console.log(`Admin panel: http://localhost:${port}/admin`);
   console.log(`Public store: http://localhost:${port}/public.html`);
-});
-
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  await prisma.$disconnect();
-  process.exit(0);
 });

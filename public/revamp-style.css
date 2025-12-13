@@ -996,3 +996,414 @@ input, select, textarea, button {
     color: #666;
     padding: 40px 20px;
 }
+
+/* ========================================
+   LANDING PAGE STYLES
+   ======================================== */
+
+.landing-page {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Landing Header */
+.landing-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.header-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header-logo {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.header-logo .logo-img {
+    height: 40px;
+    width: auto;
+}
+
+.header-nav {
+    display: flex;
+    gap: 24px;
+}
+
+.header-nav .nav-link {
+    color: #333;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.header-nav .nav-link:hover {
+    color: #111827;
+}
+
+.header-auth {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.auth-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.user-name {
+    font-weight: 500;
+    color: #333;
+}
+
+/* Buttons */
+.btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.btn-primary-sm {
+    background: #111827;
+    color: #fff;
+}
+
+.btn-primary-sm:hover {
+    background: #1f2937;
+}
+
+.btn-outline {
+    background: transparent;
+    color: #333;
+    border: 1px solid #e5e7eb;
+}
+
+.btn-outline:hover {
+    background: #f3f4f6;
+}
+
+.btn-admin {
+    background: #4f46e5;
+    color: #fff;
+}
+
+.btn-admin:hover {
+    background: #4338ca;
+}
+
+.btn-primary-landing {
+    background: #111827;
+    color: #fff;
+    padding: 14px 32px;
+    font-size: 16px;
+    border-radius: 12px;
+}
+
+.btn-primary-landing:hover {
+    background: #1f2937;
+    transform: translateY(-2px);
+}
+
+/* Hero Section */
+.landing-main {
+    flex: 1;
+    margin-top: 64px; /* Account for fixed header */
+}
+
+.hero-section {
+    position: relative;
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.hero-background {
+    position: absolute;
+    inset: 0;
+    /* Placeholder background - easily swappable with your own image */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-size: cover;
+    background-position: center;
+}
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    color: #fff;
+    padding: 40px 24px;
+    max-width: 800px;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin: 0 0 16px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    margin: 0 0 32px;
+    opacity: 0.9;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+}
+
+/* Features Section */
+.features-section {
+    padding: 80px 24px;
+    background: #f9fafb;
+}
+
+.features-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 32px;
+}
+
+.feature-card {
+    background: #fff;
+    padding: 32px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.feature-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+}
+
+.feature-card h3 {
+    margin: 0 0 8px;
+    font-size: 1.25rem;
+}
+
+.feature-card p {
+    margin: 0;
+    color: #6b7280;
+}
+
+/* Landing Footer */
+.landing-footer {
+    background: #111827;
+    color: #9ca3af;
+    text-align: center;
+    padding: 24px;
+}
+
+.landing-footer p {
+    margin: 0;
+}
+
+/* ========================================
+   NAV AUTH STYLES (for public.html)
+   ======================================== */
+
+.nav-auth {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.nav-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.nav-user-name {
+    font-weight: 500;
+    color: #333;
+    font-size: 14px;
+}
+
+.login-btn, .logout-btn, .admin-btn {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.login-btn {
+    background: #111827;
+    color: #fff;
+}
+
+.login-btn:hover {
+    background: #1f2937;
+}
+
+.logout-btn {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.logout-btn:hover {
+    background: #d1d5db;
+}
+
+.admin-btn {
+    background: #4f46e5;
+    color: #fff;
+}
+
+.admin-btn:hover {
+    background: #4338ca;
+}
+
+/* ========================================
+   ADMIN SIDEBAR USER STYLES
+   ======================================== */
+
+.sidebar-user {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.admin-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.admin-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.admin-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+}
+
+.admin-role {
+    font-size: 12px;
+    color: #666;
+}
+
+.sidebar-logout {
+    display: block;
+    padding: 8px 12px;
+    background: #f3f4f6;
+    color: #374151;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 13px;
+    text-align: center;
+}
+
+.sidebar-logout:hover {
+    background: #e5e7eb;
+}
+
+/* Shop Settings styles */
+#shop-settings-link {
+    cursor: pointer;
+}
+
+.shop-settings-panel {
+    max-width: 600px;
+}
+
+.shop-settings-panel .settings-content {
+    background: #f6f6f7;
+    padding: 28px;
+    border-radius: 12px;
+    margin-top: 20px;
+}
+
+.shop-settings-panel label {
+    display: block;
+    margin-bottom: 16px;
+    color: #333;
+}
+
+.shop-settings-panel input[type="text"],
+.shop-settings-panel textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #eaeaea;
+    background: #fff;
+    margin-top: 6px;
+}
+
+.shop-settings-panel textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.5rem;
+    }
+    
+    .header-nav {
+        display: none;
+    }
+    
+    .features-container {
+        grid-template-columns: 1fr;
+    }
+}
+

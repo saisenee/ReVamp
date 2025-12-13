@@ -3,12 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ReVamp - Home</title>
+    <title>ReVamp - Welcome</title>
+    <link rel="icon" type="image/png" href="/img/revamplogo.png">
+    <link rel="stylesheet" href="/revamp-style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="landing-page">
+    <!-- Header with Auth Status -->
+    <header class="landing-header">
+        <div class="header-container">
+            <a href="/" class="header-logo">
+                <img src="/img/revamp.png" alt="ReVamp Logo" class="logo-img">
+            </a>
+            <nav class="header-nav">
+                <a href="/public.html" class="nav-link">Shop</a>
+            </nav>
+            <div class="header-auth" id="header-auth">
+                <!-- Auth content loaded by JS -->
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section with Background Placeholder -->
+    <main class="landing-main">
+        <section class="hero-section" id="hero-section">
+            <!-- Background image placeholder - easily swappable -->
+            <div class="hero-background" style="background-image: url('/img/hero-bg.jpg');">
+                <div class="hero-overlay"></div>
+            </div>
+            <div class="hero-content">
+                <h1 class="hero-title" id="business-title">Welcome to ReVamp</h1>
+                <p class="hero-subtitle">Discover unique products, reimagined for you</p>
+                <div class="hero-actions">
+                    <a href="/public.html" class="btn btn-primary-landing">Browse Products</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features-section">
+            <div class="features-container">
+                <div class="feature-card">
+                    <div class="feature-icon">🛍️</div>
+                    <h3>Curated Products</h3>
+                    <p>Hand-picked selection of quality items</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚚</div>
+                    <h3>Fast Shipping</h3>
+                    <p>Quick and reliable delivery</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💯</div>
+                    <h3>Quality Guaranteed</h3>
+                    <p>Satisfaction you can count on</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <p>&copy; 2025 ReVamp. All rights reserved.</p>
+    </footer>
+
     <script>
-        // Redirect to storefront
-        window.location.href = '/public.html';
+        // Fetch user auth status and update header
+        async function initLanding() {
+            try {
+                const response = await fetch('/api/user');
+                const user = await response.json();
+                
+                const headerAuth = document.getElementById('header-auth');
+                
+                if (user.isAuthenticated) {
+                    const adminLink = user.isAdmin 
+                        ? '<a href="/admin" class="btn btn-admin">Admin</a>' 
+                        : '';
+                    
+                    headerAuth.innerHTML = `
+                        <div class="auth-user">
+                            <img src="${user.picture || '/img/default-avatar.png'}" 
+                                 alt="${user.name}" 
+                                 class="user-avatar"
+                                 onerror="this.src='/img/default-avatar.svg'">
+                            <span class="user-name">${user.name || 'User'}</span>
+                        </div>
+                        ${adminLink}
+                        <a href="/logout" class="btn btn-outline">Logout</a>
+                    `;
+                } else {
+                    headerAuth.innerHTML = `
+                        <div class="auth-user">
+                            <img src="/img/default-avatar.svg" alt="Guest" class="user-avatar">
+                            <span class="user-name">Guest</span>
+                        </div>
+                        <a href="/login" class="btn btn-primary-sm">Login</a>
+                    `;
+                }
+                
+                // Load business title
+                const businessRes = await fetch('/api/business');
+                const business = await businessRes.json();
+                if (business.title) {
+                    document.getElementById('business-title').textContent = `Welcome to ${business.title}`;
+                }
+            } catch (err) {
+                console.error('Failed to load user/business data:', err);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', initLanding);
     </script>
 </body>
 </html>

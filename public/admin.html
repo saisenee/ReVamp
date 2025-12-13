@@ -9,15 +9,22 @@
     <link rel="stylesheet" href="/revamp-style.css">
 </head>
 <body>
+    <!-- Admin auth check happens server-side, but also show user info -->
     <div class="dashboard">
         <aside class="sidebar">
-            <img src="img/revamp.png" alt="ReVamp Logo" class="logo">
+            <a href="/">
+                <img src="img/revamp.png" alt="ReVamp Logo" class="logo">
+            </a>
             <ul class="sidebar-menu">
                 <li class="active">Dashboard</li>
                 <li>Orders</li>
                 <li class="active-item">Products</li>
-                <li>Shop Settings</li>
+                <li id="shop-settings-link">Shop Settings</li>
             </ul>
+            <!-- Admin user info -->
+            <div class="sidebar-user" id="sidebar-user">
+                <!-- Populated by JS -->
+            </div>
         </aside>
 
         <main class="main-area">
@@ -41,6 +48,27 @@
                     <button id="quickEditBtn" class="pill">Quick edit</button>
                     <button id="arrangeBtn" class="pill">Arrange shop</button>
                 </div>
+            </div>
+
+            <!-- Shop Settings Panel (hidden by default) -->
+            <div id="shopSettingsPanel" class="shop-settings-panel" style="display: none;">
+                <header class="page-header">
+                    <div style="display:flex;align-items:center;gap:16px">
+                        <button type="button" id="backFromSettings" class="back-link">←</button>
+                        <h2>SHOP SETTINGS</h2>
+                    </div>
+                </header>
+                <section class="settings-content">
+                    <form id="settingsForm" class="edit-form">
+                        <label>Business Title
+                            <input id="businessTitle" name="title" type="text" placeholder="Your Business Name">
+                        </label>
+                        <label>Business Description
+                            <textarea id="businessDescription" name="description" placeholder="Describe your business..."></textarea>
+                        </label>
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                    </form>
+                </section>
             </div>
 
                         <section class="products-grid" id="productsGrid">
@@ -162,5 +190,89 @@
     </template>
 
     <script src="revamp-script.js"></script>
+    <script>
+        // Admin-specific initialization
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Load user info for sidebar
+            try {
+                const response = await fetch('/api/user');
+                const user = await response.json();
+                
+                // If not admin (shouldn't happen due to server protection, but just in case)
+                if (!user.isAdmin) {
+                    window.location.href = '/';
+                    return;
+                }
+                
+                const sidebarUser = document.getElementById('sidebar-user');
+                sidebarUser.innerHTML = `
+                    <div class="admin-profile">
+                        <img src="${user.picture || '/img/default-avatar.png'}" 
+                             alt="${user.name}" 
+                             class="admin-avatar"
+                             onerror="this.src='/img/default-avatar.svg'">
+                        <div class="admin-info">
+                            <span class="admin-name">${user.name || 'Admin'}</span>
+                            <span class="admin-role">Administrator</span>
+                        </div>
+                    </div>
+                    <a href="/logout" class="sidebar-logout">Logout</a>
+                `;
+                
+                // Load current business settings
+                const businessRes = await fetch('/api/business');
+                const business = await businessRes.json();
+                document.getElementById('businessTitle').value = business.title || '';
+                document.getElementById('businessDescription').value = business.description || '';
+                
+            } catch (err) {
+                console.error('Failed to load admin data:', err);
+            }
+            
+            // Shop Settings panel toggle
+            const shopSettingsLink = document.getElementById('shop-settings-link');
+            const shopSettingsPanel = document.getElementById('shopSettingsPanel');
+            const productsGrid = document.getElementById('productsGrid');
+            const dashboardOnly = document.querySelectorAll('.dashboard-only');
+            const backFromSettings = document.getElementById('backFromSettings');
+            
+            shopSettingsLink.addEventListener('click', () => {
+                shopSettingsPanel.style.display = 'block';
+                productsGrid.style.display = 'none';
+                dashboardOnly.forEach(el => el.style.display = 'none');
+            });
+            
+            backFromSettings.addEventListener('click', () => {
+                shopSettingsPanel.style.display = 'none';
+                productsGrid.style.display = 'grid';
+                dashboardOnly.forEach(el => el.style.display = '');
+            });
+            
+            // Settings form submission
+            document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const title = document.getElementById('businessTitle').value;
+                const description = document.getElementById('businessDescription').value;
+                
+                try {
+                    const response = await fetch('/api/business', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title, description })
+                    });
+                    
+                    if (response.ok) {
+                        alert('Settings saved successfully!');
+                    } else {
+                        const err = await response.json();
+                        alert('Failed to save: ' + (err.error || 'Unknown error'));
+                    }
+                } catch (err) {
+                    alert('Failed to save settings');
+                    console.error(err);
+                }
+            });
+        });
+    </script>
 </body>
 </html>

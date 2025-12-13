@@ -11,15 +11,20 @@
 		<!-- Top Navigation -->
 		<nav class="top-nav">
 			<div class="nav-container">
-				<img src="/img/revamp.png" alt="ReVamp Logo" class="nav-logo">
+				<a href="/">
+					<img src="/img/revamp.png" alt="ReVamp Logo" class="nav-logo">
+				</a>
 				<ul class="nav-menu">
-					<li><a href="#" class="nav-link">Home</a></li>
+					<li><a href="/" class="nav-link">Home</a></li>
 					<li><a href="#" class="nav-link">Collections</a></li>
 					<li><a href="#" class="nav-link active">Products</a></li>
 				</ul>
 				<div class="nav-actions">
 					<button id="cart-btn" class="cart-btn">View Cart (<span id="cart-count">0</span>)</button>
-					<a href="admin.html" class="dev-view-btn-small">Dev View</a>
+					<!-- Auth section -->
+					<div id="nav-auth" class="nav-auth">
+						<!-- Populated by JS -->
+					</div>
 				</div>
 			</div>
 		</nav>
@@ -28,7 +33,7 @@
 		<main class="marketplace-main">
 			<!-- Page Header -->
 			<div class="page-title-section">
-				<h1 class="marketplace-title">[YOUR BUSINESS]'S MARKETPLACE</h1>
+				<h1 class="marketplace-title" id="marketplace-title">MARKETPLACE</h1>
 				<div class="breadcrumb">
 					<span>Home</span> / <span class="current">Products</span>
 				</div>
@@ -123,8 +128,45 @@
 		</main>
 		<script src="/revamp-script.js"></script>
 		<script>
-			// Initialize public page
-			document.addEventListener('DOMContentLoaded', function() {
+			// Initialize public page with auth
+			document.addEventListener('DOMContentLoaded', async function() {
+				// Load auth status for nav
+				try {
+					const response = await fetch('/api/user');
+					const user = await response.json();
+					const navAuth = document.getElementById('nav-auth');
+					
+					if (user.isAuthenticated) {
+						const adminBtn = user.isAdmin 
+							? '<a href="/admin" class="admin-btn">Admin</a>' 
+							: '';
+						navAuth.innerHTML = `
+							<img src="${user.picture || '/img/default-avatar.png'}" 
+								 alt="${user.name}" 
+								 class="nav-avatar"
+								 onerror="this.src='/img/default-avatar.svg'">
+							<span class="nav-user-name">${user.name || 'User'}</span>
+							${adminBtn}
+							<a href="/logout" class="logout-btn">Logout</a>
+						`;
+					} else {
+						navAuth.innerHTML = `
+							<span class="nav-user-name">Guest</span>
+							<a href="/login" class="login-btn">Login</a>
+						`;
+					}
+					
+					// Load business title
+					const businessRes = await fetch('/api/business');
+					const business = await businessRes.json();
+					const titleEl = document.getElementById('marketplace-title');
+					if (titleEl && business.title) {
+						titleEl.textContent = `${business.title}'S MARKETPLACE`;
+					}
+				} catch (err) {
+					console.error('Failed to load auth:', err);
+				}
+				
 				initializePage();
 			});
 		</script>
