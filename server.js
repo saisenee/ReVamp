@@ -31,6 +31,7 @@ if (process.env.SECRET && process.env.CLIENT_ID && process.env.ISSUER_BASE_URL) 
     secret: process.env.SECRET,
     baseURL: process.env.BASE_URL || `http://localhost:${port}`,
     clientID: process.env.CLIENT_ID,
+    clientSecret: process.env.CLIENT_SECRET,
     issuerBaseURL: process.env.ISSUER_BASE_URL,
     // Fix for Vercel serverless - use code flow instead of form_post
     authorizationParams: {
