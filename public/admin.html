@@ -7,6 +7,89 @@
     <title>ReVamp Admin</title>
     <link rel="icon" type="image/png" href="/img/revamplogo.png">
     <link rel="stylesheet" href="/revamp-style.css">
+    <style>
+        /* Login Success Popup */
+        .login-success-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .login-success-content {
+            background: white;
+            padding: 40px 50px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .login-success-icon {
+            width: 70px;
+            height: 70px;
+            background: #22c55e;
+            color: white;
+            font-size: 36px;
+            font-weight: bold;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        
+        .login-success-content h3 {
+            margin: 0 0 10px;
+            font-size: 1.5rem;
+            color: #1a1a1a;
+        }
+        
+        .login-success-content p {
+            margin: 0 0 8px;
+            color: #444;
+            font-size: 1rem;
+        }
+        
+        .login-success-email {
+            color: #666 !important;
+            font-size: 0.9rem !important;
+            margin-bottom: 20px !important;
+        }
+        
+        .login-success-btn {
+            background: #22c55e;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .login-success-btn:hover {
+            background: #16a34a;
+        }
+    </style>
 </head>
 <body>
     <!-- Admin auth check happens server-side, but also show user info -->
@@ -191,6 +274,30 @@
 
     <script src="revamp-script.js"></script>
     <script>
+        // Login success popup function
+        function showLoginSuccess(user) {
+            const popup = document.createElement('div');
+            popup.className = 'login-success-popup';
+            popup.innerHTML = `
+                <div class="login-success-content">
+                    <div class="login-success-icon">✓</div>
+                    <h3>Login Successful!</h3>
+                    <p>Welcome back, <strong>${user.name || user.email}</strong></p>
+                    <p class="login-success-email">${user.email}</p>
+                    <button class="login-success-btn" onclick="this.parentElement.parentElement.remove()">Continue to Dashboard</button>
+                </div>
+            `;
+            document.body.appendChild(popup);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                if (popup.parentElement) {
+                    popup.style.opacity = '0';
+                    setTimeout(() => popup.remove(), 300);
+                }
+            }, 5000);
+        }
+
         // Admin-specific initialization
         document.addEventListener('DOMContentLoaded', async function() {
             // Load user info for sidebar
@@ -202,6 +309,16 @@
                 if (!user.isAdmin) {
                     window.location.href = '/';
                     return;
+                }
+                
+                // Show login success popup if this is a fresh login (via referrer check)
+                const referrer = document.referrer;
+                const isFromAuth0 = referrer.includes('auth0.com') || referrer.includes('/callback');
+                const hasShownWelcome = sessionStorage.getItem('welcomeShown');
+                
+                if ((isFromAuth0 || !hasShownWelcome) && user.isAuthenticated) {
+                    sessionStorage.setItem('welcomeShown', 'true');
+                    showLoginSuccess(user);
                 }
                 
                 const sidebarUser = document.getElementById('sidebar-user');
