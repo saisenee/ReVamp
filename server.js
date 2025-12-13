@@ -31,7 +31,19 @@ if (process.env.SECRET && process.env.CLIENT_ID && process.env.ISSUER_BASE_URL) 
     secret: process.env.SECRET,
     baseURL: process.env.BASE_URL || `http://localhost:${port}`,
     clientID: process.env.CLIENT_ID,
-    issuerBaseURL: process.env.ISSUER_BASE_URL
+    issuerBaseURL: process.env.ISSUER_BASE_URL,
+    // Fix for Vercel serverless - use code flow instead of form_post
+    authorizationParams: {
+      response_type: 'code',
+      scope: 'openid profile email'
+    },
+    // Session cookie settings for production
+    session: {
+      cookie: {
+        sameSite: 'Lax',
+        secure: process.env.NODE_ENV === 'production'
+      }
+    }
   };
   app.use(auth(config));
   console.log('Auth0 authentication enabled');
