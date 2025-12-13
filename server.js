@@ -20,8 +20,8 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from the 'public' folder
-app.use(express.static('public'));
+// Serve static files from the 'public' folder with absolute path
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Auth0 middleware (only if configured)
 if (process.env.SECRET && process.env.CLIENT_ID && process.env.ISSUER_BASE_URL) {
