@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" width="900" height="700">
+  <defs>
+    <style>
+      .title { font-family: Arial, sans-serif; font-size: 24px; font-weight: bold; fill: #333; }
+      .actor-label { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #333; text-anchor: middle; }
+      .use-case { font-family: Arial, sans-serif; font-size: 12px; fill: #333; text-anchor: middle; }
+      .system-label { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #555; }
+      .ellipse { fill: #e8f4fc; stroke: #2c7bb6; stroke-width: 2; }
+      .system-box { fill: none; stroke: #666; stroke-width: 2; stroke-dasharray: 5,5; }
+      .actor-line { stroke: #333; stroke-width: 2; }
+      .association { stroke: #333; stroke-width: 1.5; fill: none; }
+      .include-line { stroke: #666; stroke-width: 1; stroke-dasharray: 4,4; }
+      .include-label { font-family: Arial, sans-serif; font-size: 10px; fill: #666; font-style: italic; }
+    </style>
+  </defs>
+  
+  <!-- Title -->
+  <text x="450" y="35" class="title">ReVamp Application - UML Use Case Diagram</text>
+  
+  <!-- System Boundary -->
+  <rect x="200" y="60" width="500" height="600" class="system-box" rx="10" ry="10"/>
+  <text x="220" y="85" class="system-label">ReVamp System</text>
+  
+  <!-- Admin Actor (Left) -->
+  <g transform="translate(80, 280)">
+    <!-- Head -->
+    <circle cx="0" cy="0" r="15" fill="none" stroke="#333" stroke-width="2"/>
+    <!-- Body -->
+    <line x1="0" y1="15" x2="0" y2="50" class="actor-line"/>
+    <!-- Arms -->
+    <line x1="-20" y1="30" x2="20" y2="30" class="actor-line"/>
+    <!-- Legs -->
+    <line x1="0" y1="50" x2="-15" y2="80" class="actor-line"/>
+    <line x1="0" y1="50" x2="15" y2="80" class="actor-line"/>
+    <!-- Label -->
+    <text x="0" y="100" class="actor-label">Admin</text>
+  </g>
+  
+  <!-- Customer Actor (Right) -->
+  <g transform="translate(820, 280)">
+    <!-- Head -->
+    <circle cx="0" cy="0" r="15" fill="none" stroke="#333" stroke-width="2"/>
+    <!-- Body -->
+    <line x1="0" y1="15" x2="0" y2="50" class="actor-line"/>
+    <!-- Arms -->
+    <line x1="-20" y1="30" x2="20" y2="30" class="actor-line"/>
+    <!-- Legs -->
+    <line x1="0" y1="50" x2="-15" y2="80" class="actor-line"/>
+    <line x1="0" y1="50" x2="15" y2="80" class="actor-line"/>
+    <!-- Label -->
+    <text x="0" y="100" class="actor-label">Customer</text>
+  </g>
+  
+  <!-- Admin Use Cases (Left side) -->
+  
+  <!-- UC1: Login/Authenticate -->
+  <ellipse cx="350" cy="110" rx="80" ry="25" class="ellipse"/>
+  <text x="350" y="114" class="use-case">Login / Authenticate</text>
+  
+  <!-- UC2: Create Product -->
+  <ellipse cx="320" cy="180" rx="70" ry="25" class="ellipse"/>
+  <text x="320" y="184" class="use-case">Create Product</text>
+  
+  <!-- UC3: Edit Product -->
+  <ellipse cx="320" cy="250" rx="65" ry="25" class="ellipse"/>
+  <text x="320" y="254" class="use-case">Edit Product</text>
+  
+  <!-- UC4: Delete Product -->
+  <ellipse cx="320" cy="320" rx="70" ry="25" class="ellipse"/>
+  <text x="320" y="324" class="use-case">Delete Product</text>
+  
+  <!-- UC5: Upload Images -->
+  <ellipse cx="320" cy="390" rx="70" ry="25" class="ellipse"/>
+  <text x="320" y="394" class="use-case">Upload Images</text>
+  
+  <!-- UC6: Delete Images -->
+  <ellipse cx="320" cy="460" rx="65" ry="25" class="ellipse"/>
+  <text x="320" y="464" class="use-case">Delete Images</text>
+  
+  <!-- UC7: View Dashboard -->
+  <ellipse cx="320" cy="530" rx="70" ry="25" class="ellipse"/>
+  <text x="320" y="534" class="use-case">View Dashboard</text>
+  
+  <!-- Shared Use Cases (Center) -->
+  
+  <!-- UC8: Browse Products -->
+  <ellipse cx="550" cy="180" rx="75" ry="25" class="ellipse"/>
+  <text x="550" y="184" class="use-case">Browse Products</text>
+  
+  <!-- UC9: View Product Details -->
+  <ellipse cx="550" cy="250" rx="85" ry="25" class="ellipse"/>
+  <text x="550" y="254" class="use-case">View Product Details</text>
+  
+  <!-- UC10: Search Products -->
+  <ellipse cx="550" cy="320" rx="75" ry="25" class="ellipse"/>
+  <text x="550" y="324" class="use-case">Search Products</text>
+  
+  <!-- Customer-Only Use Cases (Right side) -->
+  
+  <!-- UC11: Add to Cart -->
+  <ellipse cx="550" cy="390" rx="65" ry="25" class="ellipse"/>
+  <text x="550" y="394" class="use-case">Add to Cart</text>
+  
+  <!-- UC12: View Cart -->
+  <ellipse cx="550" cy="460" rx="60" ry="25" class="ellipse"/>
+  <text x="550" y="464" class="use-case">View Cart</text>
+  
+  <!-- UC13: Checkout -->
+  <ellipse cx="550" cy="530" rx="55" ry="25" class="ellipse"/>
+  <text x="550" y="534" class="use-case">Checkout</text>
+  
+  <!-- UC14: Manage Variations -->
+  <ellipse cx="320" cy="600" rx="80" ry="25" class="ellipse"/>
+  <text x="320" y="604" class="use-case">Manage Variations</text>
+  
+  <!-- Admin Associations -->
+  <line x1="100" y1="280" x2="270" y2="110" class="association"/>
+  <line x1="100" y1="280" x2="250" y2="180" class="association"/>
+  <line x1="100" y1="280" x2="255" y2="250" class="association"/>
+  <line x1="100" y1="280" x2="250" y2="320" class="association"/>
+  <line x1="100" y1="280" x2="250" y2="390" class="association"/>
+  <line x1="100" y1="280" x2="255" y2="460" class="association"/>
+  <line x1="100" y1="280" x2="250" y2="530" class="association"/>
+  <line x1="100" y1="310" x2="240" y2="600" class="association"/>
+  
+  <!-- Admin to shared use cases -->
+  <line x1="100" y1="280" x2="475" y2="180" class="association"/>
+  <line x1="100" y1="280" x2="465" y2="250" class="association"/>
+  <line x1="100" y1="280" x2="475" y2="320" class="association"/>
+  
+  <!-- Customer Associations -->
+  <line x1="800" y1="280" x2="625" y2="180" class="association"/>
+  <line x1="800" y1="280" x2="635" y2="250" class="association"/>
+  <line x1="800" y1="280" x2="625" y2="320" class="association"/>
+  <line x1="800" y1="280" x2="615" y2="390" class="association"/>
+  <line x1="800" y1="280" x2="610" y2="460" class="association"/>
+  <line x1="800" y1="280" x2="605" y2="530" class="association"/>
+  
+  <!-- Include relationships -->
+  <!-- Create Product includes Upload Images -->
+  <path d="M 320 205 Q 280 280 320 365" class="include-line" fill="none"/>
+  <text x="260" y="290" class="include-label">«include»</text>
+  
+  <!-- Delete Product includes Delete Images -->
+  <path d="M 320 345 Q 280 400 320 435" class="include-line" fill="none"/>
+  <text x="255" y="395" class="include-label">«include»</text>
+  
+  <!-- Legend -->
+  <g transform="translate(220, 665)">
+    <rect x="0" y="-15" width="460" height="30" fill="#f9f9f9" stroke="#ccc" rx="5"/>
+    <text x="10" y="5" class="use-case">Legend:</text>
+    <line x1="70" y1="0" x2="110" y2="0" class="association"/>
+    <text x="120" y="5" class="use-case">Association</text>
+    <line x1="210" y1="0" x2="250" y2="0" class="include-line"/>
+    <text x="260" y="5" class="use-case">«include»</text>
+    <ellipse cx="380" cy="0" rx="30" ry="12" class="ellipse"/>
+    <text x="420" y="5" class="use-case">Use Case</text>
+  </g>
+</svg>
