@@ -22,7 +22,6 @@ model Product {
   ownerId     String?  @db.ObjectId
   owner       User?    @relation(fields: [ownerId], references: [id])
   createdAt   DateTime @default(now())
-  3.33000
   updatedAt   DateTime @updatedAt
 }
 
