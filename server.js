@@ -72,9 +72,14 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
-// Start server
-app.listen(port, () => {
-  console.log(`ReVamp server running at http://localhost:${port}`);
-  console.log(`Admin panel: http://localhost:${port}/admin`);
-  console.log(`Public store: http://localhost:${port}/public.html`);
-});
+// Start server (only for local development)
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(port, () => {
+    console.log(`ReVamp server running at http://localhost:${port}`);
+    console.log(`Admin panel: http://localhost:${port}/admin`);
+    console.log(`Public store: http://localhost:${port}/public.html`);
+  });
+}
+
+// Export for Vercel serverless
+export default app;

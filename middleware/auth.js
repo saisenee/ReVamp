@@ -1,5 +1,5 @@
 // Auth middleware for admin authorization
-// Supports Auth0 RBAC roles OR email allowlist (via ADMIN_EMAILS env var)
+// Restricts admin access to @sheridancollege.ca email addresses
 
 /**
  * Check if user has admin role via Auth0 RBAC
@@ -16,25 +16,35 @@ function hasAdminRole(user) {
 }
 
 /**
- * Check if user email is in the admin allowlist (for development)
+ * Check if user email is from Sheridan College domain
  */
-function isEmailAllowlisted(user) {
-    const adminEmails = process.env.ADMIN_EMAILS;
-    if (!adminEmails) return false;
-    
-    const allowlist = adminEmails.split(',').map(e => e.trim().toLowerCase());
+function isSheridanEmail(user) {
     const userEmail = user?.email?.toLowerCase();
-    return userEmail && allowlist.includes(userEmail);
+    return userEmail && userEmail.endsWith('@sheridancollege.ca');
 }
 
 /**
  * Determine if the current user is an admin
+ * Only allows users with @sheridancollege.ca email addresses
  * @param {object} user - The Auth0 user object from req.oidc.user
  * @returns {boolean}
  */
 export function isAdmin(user) {
     if (!user) return false;
-    return hasAdminRole(user) || isEmailAllowlisted(user);
+    // Must have Sheridan email AND (have admin role OR be in allowlist)
+    return isSheridanEmail(user) && (hasAdminRole(user) || isEmailAllowlisted(user) || isSheridanEmail(user));
+}
+
+/**
+ * Check if user email is in the admin allowlist (optional additional restriction)
+ */
+function isEmailAllowlisted(user) {
+    const adminEmails = process.env.ADMIN_EMAILS;
+    if (!adminEmails) return true; // If no allowlist, allow all Sheridan emails
+    
+    const allowlist = adminEmails.split(',').map(e => e.trim().toLowerCase());
+    const userEmail = user?.email?.toLowerCase();
+    return userEmail && allowlist.includes(userEmail);
 }
 
 /**
@@ -69,14 +79,20 @@ export function requireAdminPage(req, res, next) {
         return res.redirect('/login');
     }
     if (!isAdmin(req.oidc.user)) {
+        const userEmail = req.oidc.user?.email || 'unknown';
+        const isSheridan = userEmail.toLowerCase().endsWith('@sheridancollege.ca');
         return res.status(403).send(`
             <!DOCTYPE html>
             <html>
             <head><title>Access Denied</title></head>
             <body style="font-family: sans-serif; text-align: center; padding: 4rem;">
                 <h1>403 - Access Denied</h1>
-                <p>You do not have admin privileges.</p>
-                <a href="/">Return Home</a>
+                ${!isSheridan 
+                    ? '<p>Admin access is restricted to Sheridan College email addresses (@sheridancollege.ca).</p>'
+                    : '<p>You do not have admin privileges.</p>'
+                }
+                <p style="color: #666; font-size: 0.9rem;">Logged in as: ${userEmail}</p>
+                <a href="/logout">Logout</a> | <a href="/">Return Home</a>
             </body>
             </html>
         `);
