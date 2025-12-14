@@ -62,7 +62,7 @@ prisma.$connect().then(() => {
 
 // ----- USER (GET) -----
 // Publish user data and auth state to the frontend
-router.get('/api/user', async (req, res) => {
+router.get('/user', async (req, res) => {
     try {
         if (req.oidc?.isAuthenticated()) {
             const user = await ensureUser(req.oidc.user)
@@ -329,13 +329,13 @@ router.delete('/data/:id', async (req, res) => {
 })
 
 // ----- BUSINESS SETTINGS -----
-// GET /api/business - Public endpoint to get business info
-router.get('/api/business', (req, res) => {
+// GET /business - Public endpoint to get business info
+router.get('/business', (req, res) => {
     res.json(businessSettings)
 })
 
-// PUT /api/business - Admin-only endpoint to update business info
-router.put('/api/business', requireAdmin, (req, res) => {
+// PUT /business - Admin-only endpoint to update business info
+router.put('/business', requireAdmin, (req, res) => {
     try {
         const { title, description } = req.body
         if (title !== undefined) businessSettings.title = title
@@ -350,8 +350,8 @@ router.put('/api/business', requireAdmin, (req, res) => {
 // ----- ADMIN PRODUCT ROUTES -----
 // These routes require admin authorization and allow editing any product
 
-// PUT /api/admin/products/:id - Admin can edit any product
-router.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
+// PUT /admin/products/:id - Admin can edit any product
+router.put('/admin/products/:id', requireAdmin, async (req, res) => {
     try {
         const { id, _id, ownerId, owner, ...updateData } = req.body || {}
         
@@ -375,8 +375,8 @@ router.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
     }
 })
 
-// DELETE /api/admin/products/:id - Admin can delete any product
-router.delete('/api/admin/products/:id', requireAdmin, async (req, res) => {
+// DELETE /admin/products/:id - Admin can delete any product
+router.delete('/admin/products/:id', requireAdmin, async (req, res) => {
     try {
         const product = await prisma[model].findUnique({
             where: { id: req.params.id }
@@ -408,6 +408,24 @@ router.delete('/api/admin/products/:id', requireAdmin, async (req, res) => {
         res.status(500).json({ error: 'Failed to delete product', details: err.message })
     }
 })
+
+// Debug endpoint to see user info
+router.get('/debug-user', (req, res) => {
+    if (!req.oidc?.isAuthenticated()) {
+        return res.json({ authenticated: false });
+    }
+    
+    const user = req.oidc.user;
+    const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
+    
+    res.json({
+        authenticated: true,
+        email: user.email,
+        name: user.name,
+        adminEmails: adminEmails,
+        isAdmin: adminEmails.includes(user.email?.toLowerCase())
+    });
+});
 
 export default router
 

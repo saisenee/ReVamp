@@ -24,27 +24,38 @@ function isSheridanEmail(user) {
 }
 
 /**
- * Determine if the current user is an admin
- * Only allows users with @sheridancollege.ca email addresses
- * @param {object} user - The Auth0 user object from req.oidc.user
- * @returns {boolean}
+ * Middleware to check if user is authenticated and is an admin
  */
 export function isAdmin(user) {
-    if (!user) return false;
-    // Must have Sheridan email AND (have admin role OR be in allowlist)
-    return isSheridanEmail(user) && (hasAdminRole(user) || isEmailAllowlisted(user) || isSheridanEmail(user));
+    if (!user || !user.email) return false;
+    
+    const userEmail = user.email.toLowerCase();
+    
+    // Check if email ends with @sheridancollege.ca
+    if (userEmail.endsWith('@sheridancollege.ca')) {
+        return true;
+    }
+    
+    // Also check specific admin emails from environment variable (as fallback)
+    const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
+    return adminEmails.includes(userEmail);
 }
 
-/**
- * Check if user email is in the admin allowlist (optional additional restriction)
- */
-function isEmailAllowlisted(user) {
-    const adminEmails = process.env.ADMIN_EMAILS;
-    if (!adminEmails) return true; // If no allowlist, allow all Sheridan emails
+// Helper to check auth and admin status - DRY principle
+function checkAuth(req) {
+    if (!process.env.SECRET || !process.env.CLIENT_ID) {
+        return { error: 'Authentication not configured', status: 503 };
+    }
     
-    const allowlist = adminEmails.split(',').map(e => e.trim().toLowerCase());
-    const userEmail = user?.email?.toLowerCase();
-    return userEmail && allowlist.includes(userEmail);
+    if (!req.oidc?.isAuthenticated()) {
+        return { error: 'Not authenticated', status: 401 };
+    }
+    
+    if (!isAdmin(req.oidc.user)) {
+        return { error: 'Unauthorized - Admin only', status: 403 };
+    }
+    
+    return { ok: true };
 }
 
 /**
@@ -58,47 +69,48 @@ export function requireAuth(req, res, next) {
 }
 
 /**
- * Middleware: Requires the user to be an authenticated admin
- */
-export function requireAdmin(req, res, next) {
-    if (!req.oidc?.isAuthenticated()) {
-        return res.status(401).json({ error: 'Authentication required' });
-    }
-    if (!isAdmin(req.oidc.user)) {
-        return res.status(403).json({ error: 'Admin access required' });
-    }
-    next();
-}
-
-/**
  * Middleware for HTML pages: Redirects to login if not authenticated,
  * then shows 403 page if not admin
  */
 export function requireAdminPage(req, res, next) {
+    // If Auth0 is not configured, deny access
+    if (!process.env.SECRET || !process.env.CLIENT_ID) {
+        return res.status(503).send('Authentication not configured');
+    }
+    
+    // If not authenticated, redirect to login with return URL
     if (!req.oidc?.isAuthenticated()) {
-        return res.redirect('/login');
+        return res.oidc.login({
+            returnTo: '/admin',
+            authorizationParams: {
+                redirect_uri: `${process.env.BASE_URL}/callback`
+            }
+        });
     }
+    
+    // Check if user is admin
     if (!isAdmin(req.oidc.user)) {
-        const userEmail = req.oidc.user?.email || 'unknown';
-        const isSheridan = userEmail.toLowerCase().endsWith('@sheridancollege.ca');
-        return res.status(403).send(`
-            <!DOCTYPE html>
-            <html>
-            <head><title>Access Denied</title></head>
-            <body style="font-family: sans-serif; text-align: center; padding: 4rem;">
-                <h1>403 - Access Denied</h1>
-                ${!isSheridan 
-                    ? '<p>Admin access is restricted to Sheridan College email addresses (@sheridancollege.ca).</p>'
-                    : '<p>You do not have admin privileges.</p>'
-                }
-                <p style="color: #666; font-size: 0.9rem;">Logged in as: ${userEmail}</p>
-                <a href="/logout">Logout</a> | <a href="/">Return Home</a>
-            </body>
-            </html>
-        `);
+        return res.status(403).send('Access denied - Admin only. Your email must end with @sheridancollege.ca');
     }
+    
     next();
 }
+
+/**
+ * Middleware for API: Requires the user to be an authenticated admin
+ */
+export function requireAdminAPI(req, res, next) {
+    const check = checkAuth(req);
+    
+    if (check.error) {
+        return res.status(check.status).json({ error: check.error });
+    }
+    
+    next();
+}
+
+// Alias for backwards compatibility
+export const requireAdmin = requireAdminAPI;
 
 export default {
     isAdmin,
