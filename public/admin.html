@@ -99,7 +99,6 @@
                 <img src="img/revamp.png" alt="ReVamp Logo" class="logo">
             </a>
             <ul class="sidebar-menu">
-                <li class="active">Dashboard</li>
                 <li onclick="location.href='/orders.html'">Orders</li>
                 <li class="active-item">Products</li>
                 <li id="shop-settings-link">Shop Settings</li>
@@ -124,12 +123,8 @@
 
             <div class="controls dashboard-only">
                 <div class="tabs">
-                    <button class="tab active">Products</button>
-                    <button class="tab">Collections</button>
-                </div>
-                <div class="actions">
-                    <!-- Remove quick edit button, keep arrange -->
-                    <button id="arrangeBtn" class="pill">Arrange shop</button>
+                    <button class="tab active" data-tab="products">Products</button>
+                    <button class="tab" data-tab="collections">Collections</button>
                 </div>
             </div>
 
@@ -154,6 +149,17 @@
                         <button type="submit" class="btn-save">Save Settings</button>
                     </form>
                 </section>
+            </div>
+
+            <!-- Collections Panel -->
+            <div id="collectionsPanel" class="collections-panel" style="display: none;">
+                <div class="collections-header">
+                    <h2>Collections</h2>
+                    <button id="addCollectionBtn" class="btn btn-primary">+ New Collection</button>
+                </div>
+                <div id="collectionsList" class="collections-list">
+                    <!-- Collections will be loaded here -->
+                </div>
             </div>
 
                         <section class="products-grid" id="productsGrid">
@@ -273,6 +279,39 @@
             <div class="chip-list variation-tags"></div>
         </div>
     </template>
+
+    <!-- Collection Modal -->
+    <div id="collectionModal" class="collection-modal" style="display: none;">
+        <div class="collection-modal-content">
+            <div class="collection-modal-header">
+                <h2 id="collectionModalTitle">New Collection</h2>
+                <button class="collection-modal-close" onclick="closeCollectionModal()">×</button>
+            </div>
+            <div class="collection-modal-body">
+                <form id="collectionForm">
+                    <input type="hidden" id="collectionId">
+                    <div class="collection-form-group">
+                        <label>Collection Name</label>
+                        <input type="text" id="collectionName" placeholder="e.g., Summer Sale, New Arrivals" required>
+                    </div>
+                    <div class="collection-form-group">
+                        <label>Description (Optional)</label>
+                        <textarea id="collectionDescription" placeholder="Describe this collection..."></textarea>
+                    </div>
+                    <div class="collection-products-section">
+                        <h3>Select Products (Click to add/remove)</h3>
+                        <div id="collectionProductsGrid" class="collection-products-grid">
+                            <!-- Products will be loaded here -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="collection-modal-footer">
+                <button class="btn btn-ghost" onclick="closeCollectionModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveCollection()">Save Collection</button>
+            </div>
+        </div>
+    </div>
 
     <script src="revamp-script.js"></script>
     <script>
@@ -406,7 +445,204 @@
                     console.error(err);
                 }
             });
+            
+            // Tab switching
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.dataset.tab;
+                    
+                    // Update active tab
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Show/hide panels
+                    if (tabName === 'products') {
+                        document.getElementById('productsGrid').style.display = 'grid';
+                        document.getElementById('collectionsPanel').style.display = 'none';
+                    } else if (tabName === 'collections') {
+                        document.getElementById('productsGrid').style.display = 'none';
+                        document.getElementById('collectionsPanel').style.display = 'block';
+                        loadCollections();
+                    }
+                });
+            });
+            
+            // Load collections
+            async function loadCollections() {
+                try {
+                    const response = await fetch('/api/collections');
+                    const collections = await response.json();
+                    renderCollections(collections);
+                } catch (err) {
+                    console.error('Failed to load collections:', err);
+                }
+            }
+            
+            // Render collections list
+            function renderCollections(collections) {
+                const list = document.getElementById('collectionsList');
+                if (!collections.length) {
+                    list.innerHTML = '<div class="empty">No collections yet. Create one to organize your products!</div>';
+                    return;
+                }
+                
+                list.innerHTML = collections.map(c => `
+                    <div class="collection-card" data-id="${c.id}">
+                        <div class="collection-info">
+                            <h3>${c.name}</h3>
+                            <p>${c.description || 'No description'}</p>
+                            <span class="collection-count">${c.productIds.length} products</span>
+                        </div>
+                        <div class="collection-actions">
+                            <button class="btn btn-ghost" onclick="editCollection('${c.id}')">Edit</button>
+                            <button class="btn btn-ghost" onclick="deleteCollection('${c.id}')">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            // Add new collection
+            document.getElementById('addCollectionBtn')?.addEventListener('click', () => {
+                openCollectionModal(); // Use modal instead of prompt
+            });
+            
+            // Edit collection
+            window.editCollection = async (id) => {
+                openCollectionModal(id);
+            };
+            
+            // Delete collection
+            window.deleteCollection = async (id) => {
+                if (!confirm('Delete this collection?')) return;
+                
+                try {
+                    await fetch(`/api/collections/${id}`, { method: 'DELETE' });
+                    loadCollections();
+                } catch (err) {
+                    alert('Failed to delete collection');
+                }
+            };
         });
+        
+        // Collection Modal Functions
+        let selectedProductIds = [];
+        
+        async function openCollectionModal(collectionId = null) {
+            const modal = document.getElementById('collectionModal');
+            const title = document.getElementById('collectionModalTitle');
+            const form = document.getElementById('collectionForm');
+            
+            // Reset form
+            form.reset();
+            document.getElementById('collectionId').value = '';
+            selectedProductIds = [];
+            
+            if (collectionId) {
+                // Edit mode
+                title.textContent = 'Edit Collection';
+                try {
+                    const response = await fetch('/api/collections');
+                    const collections = await response.json();
+                    const collection = collections.find(c => c.id === collectionId);
+                    
+                    if (collection) {
+                        document.getElementById('collectionId').value = collection.id;
+                        document.getElementById('collectionName').value = collection.name;
+                        document.getElementById('collectionDescription').value = collection.description || '';
+                        selectedProductIds = [...collection.productIds];
+                    }
+                } catch (err) {
+                    console.error('Failed to load collection:', err);
+                }
+            } else {
+                // New mode
+                title.textContent = 'New Collection';
+            }
+            
+            // Load all products
+            await loadProductsForCollection();
+            
+            modal.style.display = 'flex';
+        }
+        
+        async function loadProductsForCollection() {
+            try {
+                const response = await fetch('/api/data');
+                const products = await response.json();
+                const grid = document.getElementById('collectionProductsGrid');
+                
+                if (!products.length) {
+                    grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:#666;">No products available</div>';
+                    return;
+                }
+                
+                grid.innerHTML = products.map(p => `
+                    <div class="collection-product-item ${selectedProductIds.includes(p.id) ? 'selected' : ''}" 
+                         data-product-id="${p.id}"
+                         onclick="toggleProductSelection('${p.id}')">
+                        <img src="${(p.images && p.images[0]) || '/img/placeholder.png'}" alt="${p.title || p.name}">
+                        <div class="product-name">${p.title || p.name}</div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Failed to load products:', err);
+            }
+        }
+        
+        window.toggleProductSelection = function(productId) {
+            const index = selectedProductIds.indexOf(productId);
+            if (index > -1) {
+                selectedProductIds.splice(index, 1);
+            } else {
+                selectedProductIds.push(productId);
+            }
+            
+            // Update UI
+            const item = document.querySelector(`[data-product-id="${productId}"]`);
+            if (item) {
+                item.classList.toggle('selected');
+            }
+        };
+        
+        window.closeCollectionModal = function() {
+            document.getElementById('collectionModal').style.display = 'none';
+        };
+        
+        window.saveCollection = async function() {
+            const id = document.getElementById('collectionId').value;
+            const name = document.getElementById('collectionName').value.trim();
+            const description = document.getElementById('collectionDescription').value.trim();
+            
+            if (!name) {
+                alert('Please enter a collection name');
+                return;
+            }
+            
+            try {
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `/api/collections/${id}` : '/api/collections';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        name, 
+                        description,
+                        productIds: selectedProductIds 
+                    })
+                });
+                
+                if (response.ok) {
+                    closeCollectionModal();
+                    loadCollections();
+                } else {
+                    alert('Failed to save collection');
+                }
+            } catch (err) {
+                console.error('Failed to save collection:', err);
+                alert('Failed to save collection');
+            }
+        };
     </script>
 </body>
 </html>

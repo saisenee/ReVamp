@@ -454,22 +454,22 @@ router.put('/business', requireAdmin, (req, res) => {
 // GET business info (public - anyone can read)
 router.get('/business', async (req, res) => {
     try {
-        // Get first business record, or create default if none exists
-        let business = await prisma.business.findFirst();
-        
+        const business = await prisma.business.findFirst();
         if (!business) {
-            business = await prisma.business.create({
+            // Create default business if none exists
+            const newBusiness = await prisma.business.create({
                 data: {
+                    id: 'default',
                     title: 'My Business',
-                    description: 'Welcome to our store'
+                    description: ''
                 }
             });
+            return res.json(newBusiness);
         }
-        
         res.json(business);
     } catch (err) {
-        console.error('GET /business error:', err);
-        res.status(500).json({ error: 'Failed to load business settings' });
+        console.error('Error fetching business:', err);
+        res.status(500).json({ error: 'Failed to fetch business settings' });
     }
 });
 
@@ -486,31 +486,32 @@ router.put('/business', async (req, res) => {
     try {
         const { title, description } = req.body;
         
-        // Find existing business settings
+        // Find or create the business record
         let business = await prisma.business.findFirst();
         
-        if (business) {
+        if (!business) {
+            // Create if doesn't exist
+            business = await prisma.business.create({
+                data: {
+                    id: 'default',
+                    title: title || 'My Business',
+                    description: description || ''
+                }
+            });
+        } else {
             // Update existing
             business = await prisma.business.update({
                 where: { id: business.id },
                 data: {
                     title: title || business.title,
-                    description: description || business.description
-                }
-            });
-        } else {
-            // Create new
-            business = await prisma.business.create({
-                data: {
-                    title: title || 'My Business',
-                    description: description || ''
+                    description: description !== undefined ? description : business.description
                 }
             });
         }
         
         res.json(business);
     } catch (err) {
-        console.error('PUT /business error:', err);
+        console.error('Error updating business:', err);
         res.status(500).json({ error: 'Failed to update business settings' });
     }
 });
@@ -593,6 +594,178 @@ router.get('/debug-user', (req, res) => {
         adminEmails: adminEmails,
         isAdmin: adminEmails.includes(user.email?.toLowerCase())
     });
+});
+
+// Business settings endpoints
+router.get('/business', async (req, res) => {
+    try {
+        const business = await prisma.business.findFirst();
+        if (!business) {
+            // Create default business if none exists
+            const newBusiness = await prisma.business.create({
+                data: {
+                    id: 'default',
+                    title: 'My Business',
+                    description: ''
+                }
+            });
+            return res.json(newBusiness);
+        }
+        res.json(business);
+    } catch (err) {
+        console.error('Error fetching business:', err);
+        res.status(500).json({ error: 'Failed to fetch business settings' });
+    }
+});
+
+router.put('/business', async (req, res) => {
+    // Only admins can update business settings
+    if (!req.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    try {
+        const { title, description } = req.body;
+        
+        // Find or create the business record
+        let business = await prisma.business.findFirst();
+        
+        if (!business) {
+            // Create if doesn't exist
+            business = await prisma.business.create({
+                data: {
+                    id: 'default',
+                    title: title || 'My Business',
+                    description: description || ''
+                }
+            });
+        } else {
+            // Update existing
+            business = await prisma.business.update({
+                where: { id: business.id },
+                data: {
+                    title: title || business.title,
+                    description: description !== undefined ? description : business.description
+                }
+            });
+        }
+        
+        res.json(business);
+    } catch (err) {
+        console.error('Error updating business:', err);
+        res.status(500).json({ error: 'Failed to update business settings' });
+    }
+});
+
+// ----- COLLECTIONS -----
+
+// Collection endpoints
+router.get('/collections', async (req, res) => {
+    try {
+        const collections = await prisma.collection.findMany({
+            orderBy: { order: 'asc' }
+        });
+        res.json(collections);
+    } catch (err) {
+        console.error('Error fetching collections:', err);
+        res.status(500).json({ error: 'Failed to fetch collections' });
+    }
+});
+
+router.post('/collections', async (req, res) => {
+    if (!req.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    try {
+        const { name, description, productIds } = req.body;
+        
+        // Get max order value
+        const maxOrder = await prisma.collection.aggregate({
+            _max: { order: true }
+        });
+        
+        const collection = await prisma.collection.create({
+            data: {
+                name: name || 'New Collection',
+                description: description || '',
+                order: (maxOrder._max.order || 0) + 1,
+                productIds: productIds || []
+            }
+        });
+        
+        res.json(collection);
+    } catch (err) {
+        console.error('Error creating collection:', err);
+        res.status(500).json({ error: 'Failed to create collection' });
+    }
+});
+
+router.put('/collections/:id', async (req, res) => {
+    if (!req.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    try {
+        const { name, description, productIds, order } = req.body;
+        const updateData = {};
+        
+        if (name !== undefined) updateData.name = name;
+        if (description !== undefined) updateData.description = description;
+        if (productIds !== undefined) updateData.productIds = productIds;
+        if (order !== undefined) updateData.order = order;
+        
+        const collection = await prisma.collection.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        
+        res.json(collection);
+    } catch (err) {
+        console.error('Error updating collection:', err);
+        res.status(500).json({ error: 'Failed to update collection' });
+    }
+});
+
+router.delete('/collections/:id', async (req, res) => {
+    if (!req.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    try {
+        await prisma.collection.delete({
+            where: { id: req.params.id }
+        });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error deleting collection:', err);
+        res.status(500).json({ error: 'Failed to delete collection' });
+    }
+});
+
+// Reorder collections
+router.post('/collections/reorder', async (req, res) => {
+    if (!req.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    try {
+        const { collectionOrders } = req.body; // Array of {id, order}
+        
+        await Promise.all(
+            collectionOrders.map(({ id, order }) =>
+                prisma.collection.update({
+                    where: { id },
+                    data: { order }
+                })
+            )
+        );
+        
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error reordering collections:', err);
+        res.status(500).json({ error: 'Failed to reorder collections' });
+    }
 });
 
 export default router

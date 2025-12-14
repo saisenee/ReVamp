@@ -16,8 +16,8 @@
 				</a>
 				<ul class="nav-menu">
 					<li><a href="/" class="nav-link">Home</a></li>
-					<li><a href="#" class="nav-link">Collections</a></li>
-					<li><a href="#" class="nav-link active">Products</a></li>
+					<li><a href="#collections" class="nav-link" id="collections-link">Collections</a></li>
+					<li><a href="#products" class="nav-link active" id="products-link">Products</a></li>
 				</ul>
 				<div class="nav-actions">
 					<button id="cart-btn" class="cart-btn">View Cart (<span id="cart-count">0</span>)</button>
@@ -52,6 +52,26 @@
 					<div id="product-grid" class="products-grid">
 						<!-- Products will be loaded here by JavaScript -->
 					</div>
+				</div>
+			</div>
+
+			<!-- Collections View -->
+			<div id="collections-view" class="collections-view" style="display: none;">
+				<h2 class="section-title">COLLECTIONS</h2>
+				<div id="collections-grid" class="collections-grid">
+					<!-- Collections will be loaded here -->
+				</div>
+			</div>
+
+			<!-- Collection Detail View -->
+			<div id="collection-detail-view" class="collection-detail-view" style="display: none;">
+				<div class="collection-header">
+					<button id="collection-back-btn" class="collection-back-btn">←</button>
+					<h1 class="collection-title" id="collection-detail-title">Collection</h1>
+				</div>
+				<p class="collection-description" id="collection-detail-description"></p>
+				<div id="collection-products-grid" class="products-grid">
+					<!-- Collection products will be loaded here -->
 				</div>
 			</div>
 
@@ -168,6 +188,116 @@
 				}
 				
 				initializePage();
+			});
+			
+			// Navigation active states
+			function updateNavActiveState(activeId) {
+				document.querySelectorAll('.nav-link').forEach(link => {
+					link.classList.remove('active');
+				});
+				const activeLink = document.getElementById(activeId);
+				if (activeLink) {
+					activeLink.classList.add('active');
+				}
+			}
+
+			// Products link
+			document.getElementById('products-link')?.addEventListener('click', (e) => {
+				e.preventDefault();
+				document.getElementById('grid-view').style.display = 'block';
+				document.getElementById('collections-view').style.display = 'none';
+				document.getElementById('collection-detail-view').style.display = 'none';
+				document.getElementById('product-view').style.display = 'none';
+				document.getElementById('marketplace-title').textContent = 'MARKETPLACE';
+				updateNavActiveState('products-link');
+				renderPublicGrid();
+			});
+
+			// Collections navigation
+			document.getElementById('collections-link')?.addEventListener('click', async (e) => {
+				e.preventDefault();
+				document.getElementById('grid-view').style.display = 'none';
+				document.getElementById('collections-view').style.display = 'block';
+				document.getElementById('collection-detail-view').style.display = 'none';
+				document.getElementById('product-view').style.display = 'none';
+				document.getElementById('marketplace-title').textContent = 'COLLECTIONS';
+				updateNavActiveState('collections-link');
+				await loadPublicCollections();
+			});
+			
+			// Load collections for public view
+			async function loadPublicCollections() {
+				try {
+					const response = await fetch('/api/collections');
+					const collections = await response.json();
+					
+					const grid = document.getElementById('collections-grid');
+					if (!collections.length) {
+						grid.innerHTML = '<p class="empty">No collections available yet.</p>';
+						return;
+					}
+					
+					grid.innerHTML = collections.map(c => `
+						<div class="collection-card-public" onclick="viewCollection('${c.id}')">
+							<h3>${escapeHtml(c.name)}</h3>
+							<p>${escapeHtml(c.description || 'No description')}</p>
+							<span class="collection-count">${c.productIds.length} items</span>
+						</div>
+					`).join('');
+				} catch (err) {
+					console.error('Failed to load collections:', err);
+				}
+			}
+			
+			// View products in a collection (separate page view)
+			window.viewCollection = async (collectionId) => {
+				try {
+					const response = await fetch(`/api/collections`);
+					const collections = await response.json();
+					const collection = collections.find(c => c.id === collectionId);
+					
+					if (!collection) return;
+					
+					// Hide other views
+					document.getElementById('grid-view').style.display = 'none';
+					document.getElementById('collections-view').style.display = 'none';
+					document.getElementById('product-view').style.display = 'none';
+					document.getElementById('collection-detail-view').style.display = 'block';
+					
+					// Update collection header
+					document.getElementById('collection-detail-title').textContent = collection.name;
+					document.getElementById('collection-detail-description').textContent = collection.description || '';
+					document.getElementById('marketplace-title').textContent = collection.name.toUpperCase();
+					
+					// Load products
+					const products = await fetchProducts();
+					const filteredProducts = products.filter(p => 
+						collection.productIds.includes(p.id)
+					);
+					
+					const grid = document.getElementById('collection-products-grid');
+					if (!filteredProducts.length) {
+						grid.innerHTML = '<p class="empty">No products in this collection yet.</p>';
+						return;
+					}
+					
+					grid.innerHTML = filteredProducts.map(product => `
+						<div class="product-card" onclick="navigateToProduct('${product.id}')" style="cursor: pointer;">
+							<img src="${(product.images && product.images.length) ? product.images[0] : (product.image || 'img/placeholder.png')}" alt="${product.title || product.name}" />
+							<div class="title">${escapeHtml(product.title || product.name)}</div>
+							<div class="price">$${parseFloat(product.price).toFixed(2)}</div>
+						</div>
+					`).join('');
+				} catch (err) {
+					console.error('Failed to load collection:', err);
+				}
+			};
+			
+			// Back button from collection detail
+			document.getElementById('collection-back-btn')?.addEventListener('click', () => {
+				document.getElementById('collection-detail-view').style.display = 'none';
+				document.getElementById('collections-view').style.display = 'block';
+				document.getElementById('marketplace-title').textContent = 'COLLECTIONS';
 			});
 		</script>
 	</body>

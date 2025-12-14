@@ -36,9 +36,9 @@ model User {
 }
 
 model Business {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String   @id @default("default") @map("_id")
   title       String   @default("My Business")
-  description String?
+  description String   @default("")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -58,4 +58,14 @@ model Order {
   // Link to user who placed order (optional)
   owner         User?    @relation(fields: [ownerId], references: [id])
   ownerId       String?  @db.ObjectId
+}
+
+model Collection {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  order       Int       @default(0)
+  productIds  String[]  @db.ObjectId
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
