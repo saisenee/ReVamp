@@ -67,7 +67,7 @@ body{font-family: 'Alexandria', Inter, system-ui, -apple-system, 'Segoe UI', Rob
 .sidebar{width:var(--sidebar-width); background:#ffffff; border-right:1px solid #ececec; padding:28px}
 .sidebar .logo{width:140px}
 .sidebar-menu{list-style:none; padding:20px 0 0 0; margin:0}
-.sidebar-menu li{padding:12px 8px; color:#666; border-radius:8px}
+.sidebar-menu li{padding:12px 8px; color:#666; border-radius:8px; cursor:pointer}
 .sidebar-menu li.active-item{background:var(--muted); color:#111}
 
 .main-area{flex:1; padding:36px}
@@ -87,20 +87,61 @@ body{font-family: 'Alexandria', Inter, system-ui, -apple-system, 'Segoe UI', Rob
 
 .products-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:24px; margin-top:28px}
 .product-card{background:#fff; border:1px solid #eee; border-radius:8px; padding:16px; display:flex; flex-direction:column; gap:12px}
-.product-card .thumb{position:relative; height:200px; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,#fafafa,#f7f7f7); border-radius:6px}
+.product-card .thumb{position:relative; height:200px; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,#fafafa,#f7f7f7); border-radius:6px; overflow: hidden;}
+.product-card .thumb img{width:100%; height:100%; object-fit:cover;}
 .product-card .thumb .placeholder{color:#bbb}
 .product-card .thumb .select{position:absolute; left:8px; top:8px}
 .product-card .meta{display:flex; justify-content:space-between; align-items:center}
 .product-card .title{font-weight:600}
 .product-card .price{color:#333}
 
-.add-card{display:flex; align-items:center; justify-content:center; border:2px dashed #e6e6e6; border-radius:8px; padding:18px; cursor:pointer; background:#fafafa}
-.add-card .plus{font-size:36px; color:#999}
+/* Product card action buttons */
+.product-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
 
-/* Hover/focus state to signal clickability */
-.add-card{transition:background-color 180ms ease-in-out, border-color 180ms ease-in-out}
+.product-card-actions .btn {
+    flex: 1;
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+/* Quick delete button on product card */
+.product-card-delete {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    opacity: 0;
+    transition: opacity 0.2s, background 0.2s;
+}
+
+.product-card:hover .product-card-delete {
+    opacity: 1;
+}
+
+.product-card-delete:hover {
+    background: rgba(220, 38, 38, 1);
+}
+
+/* Add Product Card */
+.add-card{display:flex; align-items:center; justify-content:center; border:2px dashed #e6e6e6; border-radius:8px; padding:18px; cursor:pointer; background:#fafafa; transition:background-color 180ms ease-in-out, border-color 180ms ease-in-out; min-height: 280px;}
 .add-card:hover{background:#f6f8ff; border-color:#c7d2fe}
-.add-card:focus-within, .add-card:focus{outline:3px solid rgba(99,102,241,0.15); outline-offset:2px}
+.add-card:focus, .add-card:active{outline:3px solid rgba(99,102,241,0.15); outline-offset:2px}
+.add-card .plus{font-size:36px; color:#999; line-height: 1;}
+.add-card div{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;}
 
 /* responsive tweaks */
 @media (max-width:900px){
@@ -997,6 +1038,20 @@ input, select, textarea, button {
     padding: 40px 20px;
 }
 
+/* Orders page header button */
+.page-header .view-store-btn {
+    background: #111827;
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.page-header .view-store-btn:hover {
+    background: #1f2937;
+}
+
 /* ========================================
    LANDING PAGE STYLES
    ======================================== */
@@ -1361,107 +1416,99 @@ input, select, textarea, button {
 }
 
 .shop-settings-panel {
-    max-width: 600px;
+    max-width: 900px;
+}
+
+.shop-settings-panel .page-header {
+    margin-bottom: 28px;
+}
+
+.shop-settings-panel .back-settings {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    margin-right: 12px;
+    transition: color 0.2s;
+}
+
+.shop-settings-panel .back-settings:hover {
+    color: var(--accent);
 }
 
 .shop-settings-panel .settings-content {
-    background: #f6f6f7;
-    padding: 28px;
+    background: #fff;
+    padding: 32px;
     border-radius: 12px;
-    margin-top: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.shop-settings-panel label {
-    display: block;
-    margin-bottom: 16px;
-    color: #333;
+.shop-settings-panel .settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.shop-settings-panel .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.shop-settings-panel .form-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .shop-settings-panel input[type="text"],
 .shop-settings-panel textarea {
     width: 100%;
-    padding: 12px;
+    padding: 12px 16px;
     border-radius: 8px;
-    border: 1px solid #eaeaea;
+    border: 1px solid #e6e6e6;
+    background: #fafafa;
+    font-size: 15px;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.shop-settings-panel input[type="text"]:focus,
+.shop-settings-panel textarea:focus {
+    outline: none;
+    border-color: #c7d2fe;
     background: #fff;
-    margin-top: 6px;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
 }
 
 .shop-settings-panel textarea {
-    min-height: 100px;
+    min-height: 120px;
     resize: vertical;
+    font-family: inherit;
 }
 
-/* Product card action buttons */
-.product-card-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.product-card-actions .btn {
-    flex: 1;
-    padding: 6px 12px;
-    font-size: 13px;
-}
-
-/* Quick delete button on product card */
-.product-card-delete {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: rgba(239, 68, 68, 0.9);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 16px;
-    opacity: 0;
-    transition: opacity 0.2s, background 0.2s;
-}
-
-.product-card:hover .product-card-delete {
-    opacity: 1;
-}
-
-.product-card-delete:hover {
-    background: rgba(220, 38, 38, 1);
-}
-
-/* Edit page button improvements */
-.edit-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.edit-actions .btn-primary {
+.shop-settings-panel .btn-save {
+    align-self: flex-start;
     background: #22c55e;
     color: #fff;
     border: none;
-    padding: 10px 24px;
+    padding: 12px 32px;
+    border-radius: 8px;
     font-weight: 600;
     font-size: 15px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
 }
 
-.edit-actions .btn-primary:hover {
+.shop-settings-panel .btn-save:hover {
     background: #16a34a;
 }
 
-.edit-actions .btn-ghost {
-    background: transparent;
-    color: #ef4444;
-    border: 1px solid #ef4444;
-    padding: 10px 24px;
-    font-weight: 500;
-}
-
-.edit-actions .btn-ghost:hover {
-    background: #fee2e2;
+.shop-settings-panel .btn-save:active {
+    transform: translateY(1px);
 }
 

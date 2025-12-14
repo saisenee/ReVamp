@@ -825,6 +825,67 @@ async function showProductGrid() {
     await renderPublicGrid();
 }
 
+// Handle checkout - create order in database
+async function handleCheckout() {
+    if (CartManager.cart.length === 0) {
+        alert('Your cart is empty');
+        return;
+    }
+    
+    try {
+        // Get user info (if logged in)
+        const userResponse = await fetch('/api/user');
+        const user = await userResponse.json();
+        
+        // Calculate total
+        const subtotal = CartManager.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        
+        // Prepare order data
+        const orderData = {
+            customerEmail: user.email || 'guest@example.com',
+            customerName: user.name || 'Guest',
+            items: CartManager.cart.map(item => ({
+                productId: item.productId,
+                title: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                options: item.options || []
+            })),
+            total: subtotal,
+            status: 'pending'
+        };
+        
+        // Create order via API
+        const response = await fetch('/api/orders', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to create order');
+        }
+        
+        const order = await response.json();
+        
+        // Clear cart
+        CartManager._cart = [];
+        CartManager.save();
+        
+        // Show success message
+        alert(`Order placed successfully!\n\nOrder Number: ${order.orderNumber}\nTotal: $${order.total.toFixed(2)}\n\nThank you for your purchase!`);
+        
+        // Close cart modal
+        closeCart();
+        
+    } catch (error) {
+        console.error('Checkout error:', error);
+        alert('Failed to place order. Please try again.');
+    }
+}
+
 // Make functions global - use CartManager
 window.showCart = showCart;
 window.closeCart = closeCart;
@@ -833,10 +894,19 @@ window.removeFromCart = (id) => CartManager.remove(id);
 window.updateQuantity = (id, qty) => CartManager.updateQuantity(id, qty);
 window.navigateToProduct = navigateToProduct;
 window.CartManager = CartManager;
+window.handleCheckout = handleCheckout;
 
 // Initialize cart count on load
 document.addEventListener('DOMContentLoaded', () => {
     CartManager.updateCount();
+    
+    // Add cart button click handler
+    const cartBtn = document.getElementById('cart-btn');
+    if (cartBtn) {
+        cartBtn.addEventListener('click', () => {
+            showCart();
+        });
+    }
 });
 
 // SPA: Back to dashboard from edit-product

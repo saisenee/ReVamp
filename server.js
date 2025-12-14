@@ -7,6 +7,7 @@ import { auth } from 'express-openid-connect';
 import apiRouter from './routes/api.js';
 import uploadRouter from './routes/upload.js';
 import productsRouter from './routes/products.js';
+import ordersRouter from './routes/orders.js';
 import { isAdmin, requireAdminPage } from './middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -110,6 +111,7 @@ app.use((req, res, next) => {
 app.use('/api', apiRouter);
 app.use('/api', uploadRouter);
 app.use('/api/products', productsRouter);
+app.use('/api/orders', ordersRouter);
 
 // Error handling for Auth0 callback errors
 app.use((err, req, res, next) => {

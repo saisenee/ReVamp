@@ -32,6 +32,7 @@ model User {
   name     String?
   picture  String?
   products Product[]
+  orders   Order[]
 }
 
 model Business {
@@ -40,4 +41,21 @@ model Business {
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Order {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  orderNumber   String   @unique
+  customerEmail String
+  customerName  String?
+  items         Json     // Array of {productId, title, quantity, price}
+  total         Float
+  status        String   @default("pending") // pending, processing, shipped, completed, cancelled
+  shippingAddress Json?  // {street, city, province, postal, country}
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Link to user who placed order (optional)
+  owner         User?    @relation(fields: [ownerId], references: [id])
+  ownerId       String?  @db.ObjectId
 }

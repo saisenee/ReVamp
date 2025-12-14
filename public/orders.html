@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders - ReVamp Admin</title>
+    <link rel="icon" type="image/png" href="/img/revamplogo.png">
+    <link rel="stylesheet" href="/revamp-style.css">
+    <style>
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 24px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .orders-table th {
+            background: #f3f4f6;
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .orders-table td {
+            padding: 16px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .orders-table tr:hover {
+            background: #f9fafb;
+            cursor: pointer;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-processing { background: #dbeafe; color: #1e40af; }
+        .status-shipped { background: #d1fae5; color: #065f46; }
+        .status-completed { background: #dcfce7; color: #166534; }
+        .status-cancelled { background: #fee2e2; color: #991b1b; }
+        
+        .empty-orders {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .demo-btn {
+            background: #8b5cf6;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <aside class="sidebar">
+            <a href="/">
+                <img src="img/revamp.png" alt="ReVamp Logo" class="logo">
+            </a>
+            <ul class="sidebar-menu">
+                <li onclick="location.href='/admin'">Dashboard</li>
+                <li class="active-item">Orders</li>
+                <li onclick="location.href='/admin'">Products</li>
+                <li onclick="location.href='/admin'">Shop Settings</li>
+            </ul>
+            <div class="sidebar-user" id="sidebar-user"></div>
+        </aside>
+
+        <main class="main-area">
+            <header class="page-header">
+                <h1>ORDERS</h1>
+                <a href="/admin" class="view-store-btn">Back to Dashboard</a>
+            </header>
+
+            <div id="orders-container">
+                <!-- Orders table will be inserted here -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Load orders
+        async function loadOrders() {
+            try {
+                const response = await fetch('/api/orders');
+                const orders = await response.json();
+                
+                const container = document.getElementById('orders-container');
+                
+                if (!orders || orders.length === 0) {
+                    container.innerHTML = '<div class="empty-orders">No orders yet. Orders will appear here when customers make purchases.</div>';
+                    return;
+                }
+                
+                const table = `
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Customer</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${orders.map(order => `
+                                <tr onclick="viewOrder('${order.id}')">
+                                    <td><strong>${order.orderNumber}</strong></td>
+                                    <td>${order.customerName || order.customerEmail}</td>
+                                    <td>${Array.isArray(order.items) ? order.items.length : 0} item(s)</td>
+                                    <td>$${order.total.toFixed(2)}</td>
+                                    <td><span class="status-badge status-${order.status}">${order.status}</span></td>
+                                    <td>${new Date(order.createdAt).toLocaleDateString()}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                
+                container.innerHTML = table;
+            } catch (err) {
+                console.error('Failed to load orders:', err);
+                alert('Failed to load orders');
+            }
+        }
+        
+        async function createDemoOrders() {
+            try {
+                const response = await fetch('/api/orders/demo', { method: 'POST' });
+                const result = await response.json();
+                alert('Demo orders created!');
+                loadOrders();
+            } catch (err) {
+                console.error('Failed to create demo orders:', err);
+                alert('Failed to create demo orders');
+            }
+        }
+        
+        function viewOrder(orderId) {
+            // TODO: Show order details modal with items breakdown
+            alert('Order detail view coming soon! Order ID: ' + orderId);
+        }
+        
+        // Load user info
+        async function loadUser() {
+            try {
+                const response = await fetch('/api/user');
+                const user = await response.json();
+                
+                if (!user.isAdmin) {
+                    window.location.href = '/';
+                    return;
+                }
+                
+                document.getElementById('sidebar-user').innerHTML = `
+                    <div class="admin-profile">
+                        <img src="${user.picture || '/img/default-avatar.png'}" 
+                             alt="${user.name}" 
+                             class="admin-avatar"
+                             onerror="this.src='/img/default-avatar.svg'">
+                        <div class="admin-info">
+                            <span class="admin-name">${user.name || 'Admin'}</span>
+                            <span class="admin-role">Administrator</span>
+                        </div>
+                    </div>
+                    <a href="/logout" class="sidebar-logout">Logout</a>
+                `;
+            } catch (err) {
+                console.error('Failed to load user:', err);
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUser();
+            loadOrders();
+        });
+    </script>
+</body>
+</html>
