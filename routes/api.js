@@ -449,8 +449,74 @@ router.put('/business', requireAdmin, (req, res) => {
     }
 })
 
+// ----- BUSINESS SETTINGS ENDPOINTS -----
+
+// GET business info (public - anyone can read)
+router.get('/business', async (req, res) => {
+    try {
+        // Get first business record, or create default if none exists
+        let business = await prisma.business.findFirst();
+        
+        if (!business) {
+            business = await prisma.business.create({
+                data: {
+                    title: 'My Business',
+                    description: 'Welcome to our store'
+                }
+            });
+        }
+        
+        res.json(business);
+    } catch (err) {
+        console.error('GET /business error:', err);
+        res.status(500).json({ error: 'Failed to load business settings' });
+    }
+});
+
+// UPDATE business info (admin only)
+router.put('/business', async (req, res) => {
+    if (!req.oidc?.isAuthenticated()) {
+        return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    if (!isAdmin(req.oidc.user)) {
+        return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    try {
+        const { title, description } = req.body;
+        
+        // Find existing business settings
+        let business = await prisma.business.findFirst();
+        
+        if (business) {
+            // Update existing
+            business = await prisma.business.update({
+                where: { id: business.id },
+                data: {
+                    title: title || business.title,
+                    description: description || business.description
+                }
+            });
+        } else {
+            // Create new
+            business = await prisma.business.create({
+                data: {
+                    title: title || 'My Business',
+                    description: description || ''
+                }
+            });
+        }
+        
+        res.json(business);
+    } catch (err) {
+        console.error('PUT /business error:', err);
+        res.status(500).json({ error: 'Failed to update business settings' });
+    }
+});
+
 // ----- ADMIN PRODUCT ROUTES -----
-// These routes require admin authorization and allow editing any product
+// These routes require admin authorization and allow editing of any product
 
 // PUT /admin/products/:id - Admin can edit any product
 router.put('/admin/products/:id', requireAdmin, async (req, res) => {

@@ -161,7 +161,7 @@
 					const business = await businessRes.json();
 					const titleEl = document.getElementById('marketplace-title');
 					if (titleEl && business.title) {
-						titleEl.textContent = `${business.title}'S MARKETPLACE`;
+						titleEl.textContent = `${business.title} Marketplace`;
 					}
 				} catch (err) {
 					console.error('Failed to load auth:', err);
