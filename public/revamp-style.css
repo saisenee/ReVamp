@@ -1392,18 +1392,76 @@ input, select, textarea, button {
     resize: vertical;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .hero-title {
-        font-size: 2.5rem;
-    }
-    
-    .header-nav {
-        display: none;
-    }
-    
-    .features-container {
-        grid-template-columns: 1fr;
-    }
+/* Product card action buttons */
+.product-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.product-card-actions .btn {
+    flex: 1;
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+/* Quick delete button on product card */
+.product-card-delete {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    opacity: 0;
+    transition: opacity 0.2s, background 0.2s;
+}
+
+.product-card:hover .product-card-delete {
+    opacity: 1;
+}
+
+.product-card-delete:hover {
+    background: rgba(220, 38, 38, 1);
+}
+
+/* Edit page button improvements */
+.edit-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.edit-actions .btn-primary {
+    background: #22c55e;
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.edit-actions .btn-primary:hover {
+    background: #16a34a;
+}
+
+.edit-actions .btn-ghost {
+    background: transparent;
+    color: #ef4444;
+    border: 1px solid #ef4444;
+    padding: 10px 24px;
+    font-weight: 500;
+}
+
+.edit-actions .btn-ghost:hover {
+    background: #fee2e2;
 }
 

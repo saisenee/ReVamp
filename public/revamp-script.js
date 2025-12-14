@@ -57,6 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return Math.random().toString(36).slice(2,9)
     }
 
+    let currentEditProductId = null; // Track which product we're editing
+
     async function render() {
         products = await fetchProducts();
         productsGrid.innerHTML = '';
@@ -65,51 +67,144 @@ document.addEventListener('DOMContentLoaded', () => {
         const addCard = document.createElement('div');
         addCard.className = 'add-card';
         addCard.innerHTML = `<div style="text-align:center"><div class="plus">+</div><div>Add Product</div></div>`;
-        addCard.addEventListener('click', onAddProduct);
+        addCard.addEventListener('click', () => onAddProduct(null));
         productsGrid.appendChild(addCard);
 
         products.forEach(p => {
             const card = document.createElement('div');
             card.className = 'product-card';
-            card.style.cursor = 'pointer';
             
             const imageUrl = (p.images && p.images.length) ? p.images[0] : (p.image || 'img/placeholder.png');
             
             card.innerHTML = `
-                <div class="thumb">
+                <div class="thumb" style="position: relative;">
                     <img src="${imageUrl}" alt="${p.title || p.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
-                    <input class="select" type="checkbox" />
+                    <button class="product-card-delete" onclick="event.stopPropagation();quickDeleteProduct('${p.id}')" title="Delete product">🗑️</button>
                 </div>
                 <div class="meta">
                     <div class="title">${p.title || p.name}</div>
                     <div class="price">$${parseFloat(p.price).toFixed(2)}</div>
                 </div>
+                <div class="product-card-actions">
+                    <button class="btn btn-ghost" onclick="event.stopPropagation();onEditProduct('${p.id}')">Edit</button>
+                    <button class="btn btn-ghost" onclick="event.stopPropagation();window.open('public.html?id=${encodeURIComponent(p.id)}', '_blank')">View</button>
+                </div>
             `;
-            
-            // Make product card clickable to view product page
-            card.addEventListener('click', (e) => {
-                if (e.target.type === 'checkbox') return;
-                window.open(`public.html?id=${encodeURIComponent(p.id)}`, '_blank');
-            });
             
             productsGrid.appendChild(card);
         });
     }
 
+    // Quick delete from product card
+    window.quickDeleteProduct = async function(productId) {
+        const product = products.find(p => p.id === productId);
+        if (!product) return;
+        
+        if (!confirm(`Delete "${product.title || product.name}"?\n\nThis action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/data/${productId}`, {
+                method: 'DELETE'
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to delete product');
+            }
+
+            await loadProducts();
+        } catch (err) {
+            console.error(err);
+            alert('Failed to delete product: ' + err.message);
+        }
+    }
+
     function onAddProduct(){
+        currentEditProductId = null;
+        document.getElementById('editProductTitle').textContent = 'ADD PRODUCT';
+        document.getElementById('deleteProductBtn').style.display = 'none';
+        editForm.reset();
+        selectedFiles = [];
+        variationGroups = [];
+        renderVariationGroups();
         document.querySelector('.products-grid').style.display = 'none';
         document.body.classList.add('hide-dashboard');
         const editSection = document.getElementById('editProductSection');
         if(editSection) editSection.style.display = 'block';
     }
 
-    // SPA: Back to dashboard from edit-product
-    document.addEventListener('click', function(e){
-        if(e.target && e.target.id === 'backToDashboard'){
+    // Make this global so onclick can access it
+    window.onEditProduct = async function(productId) {
+        currentEditProductId = productId;
+        const product = products.find(p => p.id === productId);
+        if (!product) return;
+
+        document.getElementById('editProductTitle').textContent = 'EDIT PRODUCT';
+        document.getElementById('deleteProductBtn').style.display = 'block';
+
+        // Populate form fields
+        document.getElementById('title').value = product.title || '';
+        document.getElementById('description').value = product.description || '';
+        document.getElementById('price').value = product.price || '';
+        document.getElementById('currency').value = product.currency || 'CAD';
+        document.getElementById('shipping').value = product.shipping || '';
+        document.getElementById('shippingType').value = product.shippingType || 'domestic';
+        document.getElementById('status').value = product.status || 'active';
+
+        // Load variations
+        variationGroups = product.variations ? JSON.parse(JSON.stringify(product.variations)) : [];
+        renderVariationGroups();
+
+        // Show existing images as previews
+        selectedFiles = [];
+        const previewContainer = document.querySelector('.upload-previews');
+        if (previewContainer && product.images && product.images.length) {
+            previewContainer.innerHTML = '';
+            product.images.forEach(url => {
+                const wrapper = document.createElement('div');
+                wrapper.style.position = 'relative';
+                const img = document.createElement('img');
+                img.src = url;
+                img.className = 'upload-preview';
+                wrapper.appendChild(img);
+                previewContainer.appendChild(wrapper);
+            });
+        }
+
+        document.querySelector('.products-grid').style.display = 'none';
+        document.body.classList.add('hide-dashboard');
+        document.getElementById('editProductSection').style.display = 'block';
+    };
+
+    // Handle delete button
+    document.getElementById('deleteProductBtn')?.addEventListener('click', async () => {
+        if (!currentEditProductId) return;
+        
+        if (!confirm('Are you sure you want to delete this product? This cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/data/${currentEditProductId}`, {
+                method: 'DELETE'
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to delete product');
+            }
+
+            alert('Product deleted successfully');
+            
+            // Go back to dashboard
             document.querySelector('.products-grid').style.display = '';
             document.body.classList.remove('hide-dashboard');
-            const editSection = document.getElementById('editProductSection');
-            if(editSection) editSection.style.display = 'none';
+            document.getElementById('editProductSection').style.display = 'none';
+            
+            await loadProducts();
+        } catch (err) {
+            console.error(err);
+            alert('Failed to delete product: ' + err.message);
         }
     });
 
@@ -210,9 +305,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Handle form submit for creating product
+    // Handle form submit for creating/updating product
     if (editForm && saveBtn) {
-        saveBtn.addEventListener('click', async (ev) => {
+        document.getElementById('saveProductBtn').addEventListener('click', async (ev) => {
             ev.preventDefault();
             
             const formData = new FormData();
@@ -230,10 +325,20 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('variations', JSON.stringify(variationGroups));
 
             try {
-                const res = await fetch(`${API_BASE}/data`, { 
-                    method: 'POST', 
-                    body: formData 
-                });
+                let res;
+                if (currentEditProductId) {
+                    // Update existing product
+                    res = await fetch(`${API_BASE}/data/${currentEditProductId}`, { 
+                        method: 'PUT', 
+                        body: formData 
+                    });
+                } else {
+                    // Create new product
+                    res = await fetch(`${API_BASE}/data`, { 
+                        method: 'POST', 
+                        body: formData 
+                    });
+                }
 
                 if (!res || !res.ok) {
                     let text;
@@ -241,9 +346,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error('Save failed: ' + (res ? `${res.status} ${res.statusText} - ${text}` : 'no response'));
                 }
 
-                let created;
+                let result;
                 try {
-                    created = await res.json();
+                    result = await res.json();
                 } catch (parseErr) {
                     const txt = await res.text().catch(() => '<<unreadable response>>');
                     console.warn('Failed to parse JSON response:', parseErr, txt);
@@ -261,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const previews = document.querySelectorAll('.upload-preview');
                 previews.forEach(p => p.remove());
                 if (Array.isArray(selectedFiles)) selectedFiles.length = 0;
-                alert('Product saved');
+                alert('Product saved successfully');
             } catch (err) {
                 console.error(err);
                 alert('Save failed: ' + err.message);
@@ -341,11 +446,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (quickEditBtn) {
-        quickEditBtn.addEventListener('click', () => {
-            quickEditMode = !quickEditMode;
-            quickEditBtn.textContent = quickEditMode ? 'Done' : 'Quick edit';
-            document.body.classList.toggle('quick-edit-mode', quickEditMode);
-        });
+        // Remove quick edit functionality
+        quickEditBtn.remove();
     }
 
     if (arrangeBtn) {
@@ -735,4 +837,20 @@ window.CartManager = CartManager;
 // Initialize cart count on load
 document.addEventListener('DOMContentLoaded', () => {
     CartManager.updateCount();
+});
+
+// SPA: Back to dashboard from edit-product
+document.addEventListener('click', function(e){
+    if(e.target && e.target.id === 'backToDashboard'){
+        // Return to dashboard view
+        document.querySelector('.products-grid').style.display = '';
+        document.body.classList.remove('hide-dashboard');
+        const editSection = document.getElementById('editProductSection');
+        if(editSection) editSection.style.display = 'none';
+        
+        // Show all dashboard-only elements
+        document.querySelectorAll('.dashboard-only').forEach(el => {
+            el.style.display = '';
+        });
+    }
 });

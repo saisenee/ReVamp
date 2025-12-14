@@ -128,7 +128,7 @@
                     <button class="tab">Collections</button>
                 </div>
                 <div class="actions">
-                    <button id="quickEditBtn" class="pill">Quick edit</button>
+                    <!-- Remove quick edit button, keep arrange -->
                     <button id="arrangeBtn" class="pill">Arrange shop</button>
                 </div>
             </div>
@@ -163,11 +163,11 @@
                             <header class="page-header edit-header">
                                 <div style="display:flex;align-items:center;gap:16px">
                                     <button type="button" id="backToDashboard" class="back-link">←</button>
-                                    <h2>EDIT PRODUCT</h2>
+                                    <h2 id="editProductTitle">ADD PRODUCT</h2>
                                 </div>
                                 <div class="edit-actions">
-                                    <button class="btn btn-ghost">Delete</button>
-                                    <button class="btn btn-primary">SAVE ITEM</button>
+                                    <button type="button" id="deleteProductBtn" class="btn btn-ghost" style="display:none;">Delete Product</button>
+                                    <button type="button" class="btn btn-primary" id="saveProductBtn">SAVE ITEM</button>
                                 </div>
                             </header>
                             <section class="edit-content">

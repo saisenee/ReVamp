@@ -30,52 +30,43 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']
 
 // POST /api/upload - Upload image to Vercel Blob
 router.post('/upload', async (req, res) => {
-    if (!req.oidc?.isAuthenticated()) {
-        return res.status(401).json({ error: 'Authentication required' })
-    }
-    const uploadProcessor = busboy({ headers: req.headers })
+    try {
+        // Check if BLOB token is configured
+        if (!process.env.BLOB_READ_WRITE_TOKEN) {
+            return res.status(503).json({ 
+                error: 'Vercel Blob storage not configured. Please set BLOB_READ_WRITE_TOKEN environment variable.' 
+            });
+        }
 
-    uploadProcessor.on('file', async (name, file, info) => {
-        try {
-            // Validate file type
-            if (!ALLOWED_TYPES.includes(info.mimeType)) {
-                file.resume() // Drain the stream
-                return res.status(400).json({
-                    error: 'Invalid file type. Only JPEG, PNG, WebP, and SVG images are allowed.'
-                })
-            }
+        const uploadProcessor = busboy({ headers: req.headers })
+        let fileBuffer = null
+        let filename = null
+        let mimeType = null
 
-            // Collect file data into buffer
+        uploadProcessor.on('file', async (name, file, info) => {
             const chunks = []
-            let fileSize = 0
-            let sizeLimitExceeded = false
-
-            file.on('data', (chunk) => {
-                fileSize += chunk.length
-                if (fileSize > MAX_FILE_SIZE) {
-                    sizeLimitExceeded = true
-                    file.destroy()
-                } else {
-                    chunks.push(chunk)
-                }
+            filename = info.filename
+            mimeType = info.mimeType
+            
+            file.on('data', (chunk) => chunks.push(chunk))
+            file.on('end', () => {
+                fileBuffer = Buffer.concat(chunks)
             })
+        })
 
-            file.on('end', async () => {
-                if (sizeLimitExceeded) {
-                    return res.status(400).json({
-                        error: 'File too large. Maximum size is 10MB.'
-                    })
+        uploadProcessor.on('finish', async () => {
+            try {
+                if (!fileBuffer || !filename) {
+                    return res.status(400).json({ error: 'No file provided' })
                 }
-
-                const buffer = Buffer.concat(chunks)
 
                 // Process image with Sharp (skip SVGs)
-                let processedBuffer = buffer
-                let contentType = info.mimeType
+                let processedBuffer = fileBuffer
+                let contentType = mimeType
 
-                if (!info.mimeType.includes('svg')) {
+                if (!mimeType.includes('svg')) {
                     try {
-                        processedBuffer = await sharp(buffer)
+                        processedBuffer = await sharp(fileBuffer)
                             .withMetadata() // Preserve EXIF metadata including orientation
                             .resize(MAX_WIDTH, MAX_HEIGHT, {
                                 fit: 'inside',
@@ -97,7 +88,7 @@ router.post('/upload', async (req, res) => {
                 // Upload to Vercel Blob
                 try {
                     // Get file extension from original filename
-                    const ext = info.filename.split('.').pop()
+                    const ext = filename.split('.').pop()
 
                     // https://vercel.com/docs/vercel-blob/using-blob-sdk?framework=other&language=js#put
                     const blob = await put(
@@ -125,34 +116,20 @@ router.post('/upload', async (req, res) => {
                         details: blobError.message
                     })
                 }
-            })
-
-            file.on('error', (err) => {
-                console.error('File stream error:', err)
+            } catch (error) {
+                console.error('Upload error:', error)
                 res.status(500).json({
-                    error: 'File processing error',
-                    details: err.message
+                    error: 'Upload failed',
+                    details: error.message
                 })
-            })
-
-        } catch (error) {
-            console.error('Upload error:', error)
-            res.status(500).json({
-                error: 'Upload failed',
-                details: error.message
-            })
-        }
-    })
-
-    uploadProcessor.on('error', (err) => {
-        console.error('Busboy error:', err)
-        res.status(500).json({
-            error: 'Upload processing failed',
-            details: err.message
+            }
         })
-    })
 
-    req.pipe(uploadProcessor)
+        req.pipe(uploadProcessor)
+    } catch (err) {
+        console.error('Upload route error:', err)
+        res.status(500).json({ error: 'Upload failed', details: err.message })
+    }
 })
 
 // DELETE /api/image - Delete image from Vercel Blob

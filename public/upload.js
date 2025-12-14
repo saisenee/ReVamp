@@ -91,30 +91,22 @@ export const upload = async (theFile) => {
     imagePreview.setAttribute('src', '/assets/load.svg')
     noticeArea.style.display = 'none'
 
-    // Prepare upload 
-    // i.e. construct a "multipart/form-data" request 
-    // NOTE:  "multipart" implies that the request body may contain
-    // both ordinary data and binary file data (e.g. images)
-    // See also: https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest_API/Using_FormData_Objects#sending_files_using_a_formdata_object
-
     const formData = new FormData()
     formData.append('image', theFile)
 
     try {
-
-        // Note: when the fetch reques body includes form data as below,
-        // the browser will automatically add the correct
-        // "Content-Type: multipart/form-data" header 
-        // so that the server knows how to parse it 
-
+        console.log('Uploading file:', theFile.name, 'Size:', theFile.size);
+        
         const response = await fetch('/api/upload', {
             method: 'POST',
             body: formData
         })
 
+        console.log('Upload response status:', response.status);
 
         if (!response.ok) {
             const errorData = await response.json()
+            console.error('Upload error response:', errorData);
             noticeArea.style.display = 'block'
             noticeArea.textContent = errorData.error || 'Upload failed'
             imagePreview.setAttribute('src', '/assets/photo.svg')
@@ -136,7 +128,7 @@ export const upload = async (theFile) => {
     } catch (err) {
         console.error('Upload error:', err)
         noticeArea.style.display = 'block'
-        noticeArea.textContent = 'An error occurred during upload'
+        noticeArea.textContent = 'An error occurred during upload: ' + err.message
         imagePreview.setAttribute('src', '/assets/photo.svg')
     }
 }

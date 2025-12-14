@@ -241,43 +241,139 @@ router.get('/search', async (req, res) => {
 
 
 // ----- UPDATE (PUT) -----
-// Listen for PUT requests
-// respond by updating a particular record in the database
-// This is the 'U' of CRUD
-// After updating the database we send the updated record back to the frontend.
-
-
 router.put('/data/:id', async (req, res) => {
     if (!req.oidc?.isAuthenticated()) {
         return res.status(401).send({ error: 'Authentication required' })
     }
 
-    const { id, _id, ownerId, owner, ...requestBody } = req.body || {}
-
     try {
-        // Fetch the existing record including owner relation
-        const existing = await prisma[model].findUnique({
-            where: { id: req.params.id },
-            include: { owner: true }
-        })
+        // Check if this is multipart/form-data (with files)
+        const contentType = req.headers['content-type'] || '';
+        
+        if (contentType.includes('multipart/form-data')) {
+            // Handle FormData with file uploads
+            const bb = busboy({ headers: req.headers });
+            const fields = {};
+            const imageBuffers = [];
+            
+            bb.on('file', (fieldname, file, info) => {
+                const chunks = [];
+                file.on('data', (chunk) => chunks.push(chunk));
+                file.on('end', () => {
+                    imageBuffers.push({
+                        buffer: Buffer.concat(chunks),
+                        filename: info.filename,
+                        mimeType: info.mimeType
+                    });
+                });
+            });
+            
+            bb.on('field', (name, value) => {
+                if (name.endsWith('[]')) {
+                    const key = name.slice(0, -2);
+                    if (!fields[key]) fields[key] = [];
+                    fields[key].push(value);
+                } else {
+                    fields[name] = value;
+                }
+            });
+            
+            bb.on('finish', async () => {
+                try {
+                    // Get existing product
+                    const existing = await prisma[model].findUnique({
+                        where: { id: req.params.id },
+                        include: { owner: true }
+                    });
 
-        if (!existing) {
-            return res.status(404).send({ error: 'Record not found' })
+                    if (!existing) {
+                        return res.status(404).send({ error: 'Record not found' });
+                    }
+
+                    // Check ownership
+                    if (!existing.owner || existing.owner.sub !== req.oidc.user.sub) {
+                        return res.status(403).send({ error: 'Forbidden' });
+                    }
+
+                    // Upload new images to Vercel Blob if provided
+                    let imageUrls = existing.images || [];
+                    if (process.env.BLOB_READ_WRITE_TOKEN && imageBuffers.length > 0) {
+                        const newUrls = [];
+                        for (const img of imageBuffers) {
+                            const blob = await put(img.filename, img.buffer, {
+                                access: 'public',
+                                contentType: img.mimeType
+                            });
+                            newUrls.push(blob.url);
+                        }
+                        imageUrls = [...imageUrls, ...newUrls];
+                    }
+                    
+                    // Parse variations if it's a string
+                    let variations = fields.variations;
+                    if (typeof variations === 'string') {
+                        try {
+                            variations = JSON.parse(variations);
+                        } catch (e) {
+                            variations = existing.variations;
+                        }
+                    }
+                    
+                    // Build update data
+                    const updateData = {
+                        title: fields.title || existing.title,
+                        description: fields.description || existing.description,
+                        price: fields.price ? parseFloat(fields.price) : existing.price,
+                        currency: fields.currency || existing.currency,
+                        shipping: fields.shipping ? parseFloat(fields.shipping) : existing.shipping,
+                        shippingType: fields.shippingType || existing.shippingType,
+                        status: fields.status || existing.status,
+                        images: imageUrls,
+                        categories: fields.categories || existing.categories,
+                        variations: variations || existing.variations
+                    };
+                    
+                    const updated = await prisma[model].update({
+                        where: { id: req.params.id },
+                        data: updateData
+                    });
+                    
+                    res.send(updated);
+                } catch (err) {
+                    console.error('PUT /data/:id (FormData) error:', err);
+                    res.status(500).send({ error: 'Failed to update record', details: err.message || err });
+                }
+            });
+            
+            req.pipe(bb);
+        } else {
+            // Handle regular JSON request
+            const { id, _id, ownerId, owner, ...requestBody } = req.body || {};
+
+            // Fetch the existing record including owner relation
+            const existing = await prisma[model].findUnique({
+                where: { id: req.params.id },
+                include: { owner: true }
+            });
+
+            if (!existing) {
+                return res.status(404).send({ error: 'Record not found' });
+            }
+
+            if (!existing.owner || existing.owner.sub !== req.oidc.user.sub) {
+                return res.status(403).send({ error: 'Forbidden' });
+            }
+
+            const updated = await prisma[model].update({
+                where: { id: req.params.id },
+                data: requestBody
+            });
+
+            return res.send(updated);
         }
-
-        if (!existing.owner || existing.owner.sub !== req.oidc.user.sub) {
-            return res.status(403).send({ error: 'Forbidden' })
-        }
-
-        const updated = await prisma[model].update({
-            where: { id: req.params.id },
-            data: requestBody
-        })
-
-        return res.send(updated)
     } catch (err) {
-        console.error('PUT /data/:id error:', err)
-        return res.status(500).send({ error: 'Failed to update record', details: err.message || err })
+        console.error('PUT /data/:id error:', err);
+        return res.status(500).send({ error: 'Failed to update record', details: err.message || err });
     }
 })
 
@@ -291,17 +387,21 @@ router.delete('/data/:id', async (req, res) => {
     }
 
     try {
-        // Get the cat record first (including owner) to check permissions and image URL
-        const cat = await prisma[model].findUnique({
+        // Get the product record first (including owner) to check permissions and image URL
+        const product = await prisma[model].findUnique({
             where: { id: req.params.id },
             include: { owner: true }
         })
 
-        if (!cat) {
+        if (!product) {
             return res.status(404).send({ error: 'Record not found' })
         }
 
-        if (!cat.owner || cat.owner.sub !== req.oidc.user.sub) {
+        // Allow if user is owner OR if user is admin
+        const userIsAdmin = isAdmin(req.oidc.user);
+        const userIsOwner = product.owner && product.owner.sub === req.oidc.user.sub;
+        
+        if (!userIsOwner && !userIsAdmin) {
             return res.status(403).send({ error: 'Forbidden' })
         }
 
@@ -310,14 +410,16 @@ router.delete('/data/:id', async (req, res) => {
             where: { id: req.params.id }
         })
 
-        // Delete associated image from Vercel Blob (if exists)
-        if (cat.imageUrl) {
-            try {
-                await del(cat.imageUrl)
-                console.log('Deleted image:', cat.imageUrl)
-            } catch (blobError) {
-                console.error('Failed to delete image:', blobError)
-                // Don't fail the whole operation if image delete fails
+        // Delete associated images from Vercel Blob (if exists)
+        if (product.images && product.images.length > 0) {
+            for (const imageUrl of product.images) {
+                try {
+                    await del(imageUrl)
+                    console.log('Deleted image:', imageUrl)
+                } catch (blobError) {
+                    console.error('Failed to delete image:', blobError)
+                    // Don't fail the whole operation if image delete fails
+                }
             }
         }
 
